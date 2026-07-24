@@ -1,13 +1,43 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { Bell } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { getDemoUser, getNotifications } from "@/lib/data";
+import { useAuth } from "@/lib/AuthContext";
+import type { SerializedNotification } from "@/lib/serializers";
 
-export const dynamic = "force-dynamic";
+export default function NotificationsPage() {
+  const { user, isLoadingAuth } = useAuth();
+  const [notifications, setNotifications] = useState<SerializedNotification[]>([]);
+  const [loading, setLoading] = useState(true);
 
-export default async function NotificationsPage() {
-  const user = await getDemoUser();
-  const notifications = await getNotifications(user.email);
+  useEffect(() => {
+    if (!user?.email) {
+      if (!isLoadingAuth) setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(
+          `/api/notifications?email=${encodeURIComponent(user.email)}`
+        );
+        if (res.ok) {
+          const data = (await res.json()) as SerializedNotification[];
+          if (!cancelled) setNotifications(data);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.email, isLoadingAuth]);
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
@@ -16,7 +46,9 @@ export default async function NotificationsPage() {
         <p className="text-muted-foreground mt-1">Stay updated on campus activity</p>
       </div>
 
-      {notifications.length > 0 ? (
+      {loading || isLoadingAuth ? (
+        <div className="text-sm text-muted-foreground">Loading notifications…</div>
+      ) : notifications.length > 0 ? (
         <div className="space-y-3">
           {notifications.map((n) => (
             <Card

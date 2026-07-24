@@ -37,9 +37,3 @@ export interface AlmanacEvent {
   is_featured?: boolean;
   banner_url?: string;
 }
-
-export interface MockUser {
-  full_name: string;
-  role: UserRole;
-  email: string;
-}

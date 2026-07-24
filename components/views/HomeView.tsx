@@ -17,24 +17,26 @@ import StatsCard from "@/components/dashboard/StatsCard";
 import CalendarGrid from "@/components/calendar/CalendarGrid";
 import EventCard from "@/components/events/EventCard";
 import { Button } from "@/components/ui/button";
-import type { AlmanacEvent, MockUser } from "@/lib/types";
+import { useAuth } from "@/lib/AuthContext";
+import type { AlmanacEvent } from "@/lib/types";
 import type { SerializedAlmanac } from "@/lib/serializers";
 
 interface HomeViewProps {
   events: AlmanacEvent[];
-  user: MockUser;
   registrationCount: number;
   almanac: SerializedAlmanac | null;
 }
 
 export default function HomeView({
   events,
-  user,
   registrationCount,
   almanac,
 }: HomeViewProps) {
   const router = useRouter();
+  const { user } = useAuth();
   const today = startOfToday();
+  const firstName =
+    user?.full_name?.split(" ")[0] || user?.email?.split("@")[0] || "User";
 
   const publishedEvents = events.filter((e) => e.status === "published");
   const upcomingEvents = publishedEvents.filter(
@@ -43,6 +45,7 @@ export default function HomeView({
   const cancelledEvents = events.filter((e) => e.status === "cancelled");
   const featuredEvents = upcomingEvents.filter((e) => e.is_featured).slice(0, 3);
   const nextEvents = upcomingEvents.slice(0, 6);
+  const canManage = user?.role === "admin" || user?.role === "staff";
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
@@ -56,8 +59,7 @@ export default function HomeView({
             {format(new Date(), "EEEE, MMMM d, yyyy")}
           </p>
           <h1 className="text-3xl md:text-4xl font-bold text-foreground">
-            Welcome back,{" "}
-            <span className="text-gradient">{user.full_name.split(" ")[0]}</span>
+            Welcome back, <span className="text-gradient">{firstName}</span>
           </h1>
           <p className="text-muted-foreground mt-1">
             {upcomingEvents.length} upcoming events on your campus
@@ -69,11 +71,19 @@ export default function HomeView({
               <Calendar className="w-4 h-4" /> Calendar
             </Link>
           </Button>
-          <Button asChild className="gap-2">
-            <Link href="/events">
-              <BookOpen className="w-4 h-4" /> Browse Events
-            </Link>
-          </Button>
+          {canManage ? (
+            <Button asChild className="gap-2">
+              <Link href="/admin">
+                <BookOpen className="w-4 h-4" /> Manage Events
+              </Link>
+            </Button>
+          ) : (
+            <Button asChild className="gap-2">
+              <Link href="/events">
+                <BookOpen className="w-4 h-4" /> Browse Events
+              </Link>
+            </Button>
+          )}
         </div>
       </motion.div>
 

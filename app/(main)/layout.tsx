@@ -1,9 +1,12 @@
 import AppLayout from "@/components/layout/AppLayout";
-import { getDemoUser } from "@/lib/data";
+import ProtectedShell from "@/components/ProtectedShell";
 
 export const dynamic = "force-dynamic";
 
-export default async function MainLayout({ children }: { children: React.ReactNode }) {
-  const user = await getDemoUser();
-  return <AppLayout user={user}>{children}</AppLayout>;
+export default function MainLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <ProtectedShell>
+      <AppLayout>{children}</AppLayout>
+    </ProtectedShell>
+  );
 }

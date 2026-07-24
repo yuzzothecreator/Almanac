@@ -65,24 +65,3 @@ export async function getNotifications(
     event_id: n.event_id,
   }));
 }
-
-export async function getDemoUser() {
-  const user = await prisma.user.findFirst({
-    where: { role: "student", disabled: false },
-    orderBy: { created_date: "asc" },
-  });
-
-  if (user) {
-    return {
-      email: user.email,
-      full_name: user.full_name ?? "User",
-      role: user.role as "student" | "staff" | "admin",
-    };
-  }
-
-  return {
-    email: "alex@university.edu",
-    full_name: "Alex Morgan",
-    role: "student" as const,
-  };
-}

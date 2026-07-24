@@ -1,12 +1,42 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { Bookmark } from "lucide-react";
 import EventCard from "@/components/events/EventCard";
-import { getBookmarkedEvents, getDemoUser } from "@/lib/data";
+import { useAuth } from "@/lib/AuthContext";
+import type { AlmanacEvent } from "@/lib/types";
 
-export const dynamic = "force-dynamic";
+export default function BookmarksPage() {
+  const { user, isLoadingAuth } = useAuth();
+  const [bookmarked, setBookmarked] = useState<AlmanacEvent[]>([]);
+  const [loading, setLoading] = useState(true);
 
-export default async function BookmarksPage() {
-  const user = await getDemoUser();
-  const bookmarked = await getBookmarkedEvents(user.email);
+  useEffect(() => {
+    if (!user?.email) {
+      if (!isLoadingAuth) setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(
+          `/api/bookmarks?email=${encodeURIComponent(user.email)}`
+        );
+        if (res.ok) {
+          const data = (await res.json()) as AlmanacEvent[];
+          if (!cancelled) setBookmarked(data);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.email, isLoadingAuth]);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -15,7 +45,9 @@ export default async function BookmarksPage() {
         <p className="text-muted-foreground mt-1">Events you saved for later</p>
       </div>
 
-      {bookmarked.length > 0 ? (
+      {loading || isLoadingAuth ? (
+        <div className="text-sm text-muted-foreground">Loading bookmarks…</div>
+      ) : bookmarked.length > 0 ? (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {bookmarked.map((event, i) => (
             <EventCard key={event.id} event={event} index={i} />

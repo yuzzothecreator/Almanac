@@ -1,3 +1,5 @@
-export default function AuthLayout({ children }: { children: React.ReactNode }) {
-  return children;
+import PublicOnlyShell from "@/components/PublicOnlyShell";
+
+export default function AuthGroupLayout({ children }: { children: React.ReactNode }) {
+  return <PublicOnlyShell>{children}</PublicOnlyShell>;
 }

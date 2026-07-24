@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  BarChart3,
   Bookmark,
   BookOpen,
   Calendar,
@@ -14,11 +15,13 @@ import {
   Bell,
   LogOut,
   Menu,
+  Settings,
+  Users,
   X,
 } from "lucide-react";
-import type { MockUser } from "@/lib/types";
+import { useAuth } from "@/lib/AuthContext";
 
-const navItems = [
+const studentNav = [
   { path: "/", icon: LayoutDashboard, label: "Dashboard" },
   { path: "/calendar", icon: Calendar, label: "Calendar" },
   { path: "/events", icon: BookOpen, label: "Events" },
@@ -26,18 +29,33 @@ const navItems = [
   { path: "/notifications", icon: Bell, label: "Notifications" },
 ];
 
-interface SidebarProps {
-  user: MockUser;
-}
+const staffNav = [
+  ...studentNav,
+  { path: "/admin", icon: Settings, label: "Admin Panel" },
+];
 
-export default function Sidebar({ user }: SidebarProps) {
+const adminNav = [
+  { path: "/", icon: LayoutDashboard, label: "Dashboard" },
+  { path: "/calendar", icon: Calendar, label: "Calendar" },
+  { path: "/events", icon: BookOpen, label: "Events" },
+  { path: "/admin", icon: Settings, label: "Admin Panel" },
+  { path: "/admin/analytics", icon: BarChart3, label: "Analytics" },
+  { path: "/admin/users", icon: Users, label: "Users" },
+  { path: "/notifications", icon: Bell, label: "Notifications" },
+];
+
+export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
-  const router = useRouter();
+  const { user, logout } = useAuth();
+
+  const role = user?.role || "student";
+  const items =
+    role === "admin" ? adminNav : role === "staff" ? staffNav : studentNav;
 
   const handleLogout = () => {
-    router.push("/login");
+    void logout(true);
   };
 
   const SidebarContent = () => (
@@ -62,7 +80,7 @@ export default function Sidebar({ user }: SidebarProps) {
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-1">
-        {navItems.map((item) => {
+        {items.map((item) => {
           const isActive = pathname === item.path;
           return (
             <Link
@@ -91,10 +109,10 @@ export default function Sidebar({ user }: SidebarProps) {
       </nav>
 
       <div className="p-3 border-t border-sidebar-border space-y-2">
-        {!collapsed && (
+        {!collapsed && user && (
           <div className="px-3 py-2">
             <p className="text-xs text-sidebar-foreground/80 font-medium truncate">
-              {user.full_name}
+              {user.full_name || user.email}
             </p>
             <p className="text-[10px] text-sidebar-foreground/40 capitalize">{user.role}</p>
           </div>
