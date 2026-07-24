@@ -22,6 +22,28 @@ export async function getRegistrationCount(): Promise<number> {
   return prisma.registration.count();
 }
 
+export type SerializedRegistration = {
+  id: string;
+  event_id: string;
+  user_email: string;
+  user_name: string | null;
+  status: string;
+};
+
+export async function getRegistrations(): Promise<SerializedRegistration[]> {
+  const rows = await prisma.registration.findMany({
+    orderBy: { created_date: "desc" },
+  });
+
+  return rows.map((r) => ({
+    id: r.id,
+    event_id: r.event_id,
+    user_email: r.user_email,
+    user_name: r.user_name,
+    status: r.status,
+  }));
+}
+
 export async function getActiveAlmanac(): Promise<SerializedAlmanac | null> {
   const almanac = await prisma.almanacPdf.findFirst({
     where: { is_active: true },
