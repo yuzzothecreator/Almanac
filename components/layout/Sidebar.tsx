@@ -20,6 +20,7 @@ import {
   X,
 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
+import { useNotifications } from "@/components/notifications/NotificationsProvider";
 
 const studentNav = [
   { path: "/", icon: LayoutDashboard, label: "Dashboard" },
@@ -49,6 +50,7 @@ export default function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { unreadCount } = useNotifications();
 
   const role = user?.role || "student";
   const items =
@@ -82,6 +84,7 @@ export default function Sidebar() {
       <nav className="flex-1 px-3 py-4 space-y-1">
         {items.map((item) => {
           const isActive = pathname === item.path;
+          const showBadge = item.path === "/notifications" && unreadCount > 0;
           return (
             <Link
               key={item.path}
@@ -94,13 +97,23 @@ export default function Sidebar() {
                     : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 }`}
             >
-              <item.icon
-                className={`w-5 h-5 flex-shrink-0 ${
-                  isActive ? "" : "group-hover:scale-110 transition-transform"
-                }`}
-              />
+              <span className="relative flex-shrink-0">
+                <item.icon
+                  className={`w-5 h-5 ${
+                    isActive ? "" : "group-hover:scale-110 transition-transform"
+                  }`}
+                />
+                {showBadge && collapsed && (
+                  <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500" />
+                )}
+              </span>
               {!collapsed && <span>{item.label}</span>}
-              {isActive && !collapsed && (
+              {showBadge && !collapsed && (
+                <span className="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-semibold flex items-center justify-center">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+              {isActive && !collapsed && !showBadge && (
                 <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white/80" />
               )}
             </Link>
@@ -134,10 +147,15 @@ export default function Sidebar() {
       <button
         type="button"
         onClick={() => setMobileOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-xl bg-card shadow-lg border"
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-xl bg-card shadow-lg border relative"
         aria-label="Open menu"
       >
         <Menu className="w-5 h-5" />
+        {unreadCount > 0 && (
+          <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-semibold flex items-center justify-center">
+            {unreadCount > 9 ? "9+" : unreadCount}
+          </span>
+        )}
       </button>
 
       <AnimatePresence>

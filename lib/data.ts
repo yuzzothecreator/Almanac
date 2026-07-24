@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { format } from "date-fns";
 import {
   serializeEvent,
   type SerializedAlmanac,
@@ -86,4 +87,100 @@ export async function getNotifications(
     created_date: n.created_date.toISOString(),
     event_id: n.event_id,
   }));
+}
+
+export async function markNotificationRead(
+  id: string,
+  userEmail: string
+): Promise<SerializedNotification | null> {
+  const existing = await prisma.notification.findFirst({
+    where: { id, user_email: userEmail },
+  });
+  if (!existing) return null;
+
+  const updated = await prisma.notification.update({
+    where: { id },
+    data: { is_read: true },
+  });
+
+  return {
+    id: updated.id,
+    title: updated.title,
+    message: updated.message,
+    type: updated.type,
+    is_read: updated.is_read,
+    created_date: updated.created_date.toISOString(),
+    event_id: updated.event_id,
+  };
+}
+
+export async function markAllNotificationsRead(userEmail: string): Promise<number> {
+  const result = await prisma.notification.updateMany({
+    where: { user_email: userEmail, is_read: false },
+    data: { is_read: true },
+  });
+  return result.count;
+}
+
+/** Create reminder/cancellation notifications from upcoming event data. */
+export async function detectAndCreateNotifications(
+  userEmail: string
+): Promise<SerializedNotification[]> {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const weekAhead = new Date(today);
+  weekAhead.setDate(weekAhead.getDate() + 7);
+
+  const upcoming = await prisma.event.findMany({
+    where: {
+      status: { in: ["published", "cancelled"] },
+      date: { gte: today, lte: weekAhead },
+    },
+    orderBy: { date: "asc" },
+    take: 20,
+  });
+
+  for (const event of upcoming) {
+    const type = event.status === "cancelled" ? "cancellation" : "event_reminder";
+    const existing = await prisma.notification.findFirst({
+      where: {
+        user_email: userEmail,
+        event_id: event.id,
+        type,
+      },
+    });
+
+    if (existing) continue;
+
+    const dateLabel = format(event.date, "EEE, MMM d");
+    const timeLabel = event.start_time ? ` at ${event.start_time}` : "";
+
+    if (type === "cancellation") {
+      await prisma.notification.create({
+        data: {
+          user_email: userEmail,
+          event_id: event.id,
+          type,
+          title: "Event cancelled",
+          message: `${event.title} on ${dateLabel} has been cancelled.`,
+          is_read: false,
+        },
+      });
+    } else {
+      await prisma.notification.create({
+        data: {
+          user_email: userEmail,
+          event_id: event.id,
+          type,
+          title: "Upcoming event reminder",
+          message: `${event.title} is coming up on ${dateLabel}${timeLabel}${
+            event.venue ? ` · ${event.venue}` : ""
+          }.`,
+          is_read: false,
+        },
+      });
+    }
+  }
+
+  return getNotifications(userEmail);
 }
