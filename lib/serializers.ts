@@ -17,6 +17,7 @@ type EventRecord = {
   banner_url: string | null;
   is_featured: boolean;
   max_capacity?: number | null;
+  tags?: string[];
 };
 
 export function serializeEvent(event: EventRecord): AlmanacEvent {
@@ -36,6 +37,7 @@ export function serializeEvent(event: EventRecord): AlmanacEvent {
     banner_url: event.banner_url ?? undefined,
     is_featured: event.is_featured,
     max_capacity: event.max_capacity ?? null,
+    tags: event.tags ?? [],
   };
 }
 
@@ -45,6 +47,10 @@ export type SerializedAlmanac = {
   description: string | null;
   year: string;
   file_name: string;
+  file_size?: number;
+  is_active?: boolean;
+  created_date?: string;
+  uploaded_by?: string;
 };
 
 export type SerializedNotification = {

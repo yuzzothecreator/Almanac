@@ -101,3 +101,41 @@ export async function getDbUserByEmail(email: string): Promise<AppUser | null> {
   if (!user || user.disabled) return null;
   return toAppUser(user);
 }
+
+export function getBearerToken(request: Request): string | null {
+  const header = request.headers.get("authorization") || "";
+  const match = header.match(/^Bearer\s+(.+)$/i);
+  return match?.[1]?.trim() || null;
+}
+
+export async function requireUserFromRequest(request: Request): Promise<AppUser> {
+  const token = getBearerToken(request);
+  if (!token) {
+    const error = new Error("Authentication required.");
+    (error as Error & { statusCode?: number }).statusCode = 401;
+    throw error;
+  }
+  const user = await syncUserFromClerkToken(token);
+  if (!user) {
+    const error = new Error("Invalid or expired session.");
+    (error as Error & { statusCode?: number }).statusCode = 401;
+    throw error;
+  }
+  return user;
+}
+
+export function assertRole(user: AppUser, roles: UserRole[]): void {
+  if (!roles.includes(user.role)) {
+    const error = new Error("You do not have permission for this action.");
+    (error as Error & { statusCode?: number }).statusCode = 403;
+    throw error;
+  }
+}
+
+export function canManageEvents(user: AppUser): boolean {
+  return user.role === "staff" || user.role === "admin";
+}
+
+export function isAdmin(user: AppUser): boolean {
+  return user.role === "admin";
+}

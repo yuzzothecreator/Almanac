@@ -181,9 +181,249 @@ export async function getActiveAlmanac(): Promise<SerializedAlmanac | null> {
       description: true,
       year: true,
       file_name: true,
+      file_size: true,
+      is_active: true,
+      created_date: true,
+      uploaded_by: true,
     },
   });
-  return almanac;
+  if (!almanac) return null;
+  return {
+    ...almanac,
+    created_date: almanac.created_date.toISOString(),
+  };
+}
+
+export type EventInput = {
+  title: string;
+  description?: string | null;
+  date: string;
+  start_time?: string | null;
+  end_time?: string | null;
+  venue?: string | null;
+  organizer?: string | null;
+  department?: string | null;
+  category?: string;
+  status?: string;
+  priority?: string;
+  banner_url?: string | null;
+  max_capacity?: number | null;
+  tags?: string[];
+  is_featured?: boolean;
+  created_by?: string | null;
+};
+
+function parseEventDate(date: string): Date {
+  const d = new Date(`${date}T00:00:00`);
+  if (Number.isNaN(d.getTime())) {
+    const error = new Error("Invalid event date.");
+    (error as Error & { statusCode?: number }).statusCode = 400;
+    throw error;
+  }
+  return d;
+}
+
+export async function createEvent(input: EventInput): Promise<AlmanacEvent> {
+  if (!input.title?.trim() || !input.date) {
+    const error = new Error("Title and date are required.");
+    (error as Error & { statusCode?: number }).statusCode = 400;
+    throw error;
+  }
+
+  const created = await prisma.event.create({
+    data: {
+      title: input.title.trim(),
+      description: input.description || null,
+      date: parseEventDate(input.date),
+      start_time: input.start_time || null,
+      end_time: input.end_time || null,
+      venue: input.venue || null,
+      organizer: input.organizer || null,
+      department: input.department || null,
+      category: input.category || "academic",
+      status: input.status || "draft",
+      priority: input.priority || "medium",
+      banner_url: input.banner_url || null,
+      max_capacity: input.max_capacity ?? null,
+      tags: input.tags || [],
+      is_featured: Boolean(input.is_featured),
+      created_by: input.created_by || null,
+    },
+  });
+
+  return serializeEvent(created);
+}
+
+export async function updateEvent(
+  id: string,
+  input: Partial<EventInput>
+): Promise<AlmanacEvent | null> {
+  const existing = await prisma.event.findUnique({ where: { id } });
+  if (!existing) return null;
+
+  const updated = await prisma.event.update({
+    where: { id },
+    data: {
+      ...(input.title !== undefined ? { title: input.title.trim() } : {}),
+      ...(input.description !== undefined
+        ? { description: input.description || null }
+        : {}),
+      ...(input.date !== undefined ? { date: parseEventDate(input.date) } : {}),
+      ...(input.start_time !== undefined
+        ? { start_time: input.start_time || null }
+        : {}),
+      ...(input.end_time !== undefined ? { end_time: input.end_time || null } : {}),
+      ...(input.venue !== undefined ? { venue: input.venue || null } : {}),
+      ...(input.organizer !== undefined
+        ? { organizer: input.organizer || null }
+        : {}),
+      ...(input.department !== undefined
+        ? { department: input.department || null }
+        : {}),
+      ...(input.category !== undefined ? { category: input.category } : {}),
+      ...(input.status !== undefined ? { status: input.status } : {}),
+      ...(input.priority !== undefined ? { priority: input.priority } : {}),
+      ...(input.banner_url !== undefined
+        ? { banner_url: input.banner_url || null }
+        : {}),
+      ...(input.max_capacity !== undefined
+        ? { max_capacity: input.max_capacity }
+        : {}),
+      ...(input.tags !== undefined ? { tags: input.tags } : {}),
+      ...(input.is_featured !== undefined
+        ? { is_featured: Boolean(input.is_featured) }
+        : {}),
+    },
+  });
+
+  return serializeEvent(updated);
+}
+
+export async function deleteEvent(id: string): Promise<boolean> {
+  const existing = await prisma.event.findUnique({ where: { id } });
+  if (!existing) return false;
+  await prisma.event.delete({ where: { id } });
+  return true;
+}
+
+export async function listAlmanacs(): Promise<SerializedAlmanac[]> {
+  const rows = await prisma.almanacPdf.findMany({
+    orderBy: { created_date: "desc" },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      year: true,
+      file_name: true,
+      file_size: true,
+      is_active: true,
+      created_date: true,
+      uploaded_by: true,
+    },
+  });
+
+  return rows.map((r) => ({
+    ...r,
+    created_date: r.created_date.toISOString(),
+  }));
+}
+
+export async function uploadAlmanac(input: {
+  title: string;
+  year: string;
+  description?: string | null;
+  file_name: string;
+  file_data: string;
+  uploaded_by: string;
+  is_active?: boolean;
+}): Promise<SerializedAlmanac> {
+  if (!input.title?.trim() || !input.year?.trim() || !input.file_data) {
+    const error = new Error("Title, year, and file are required.");
+    (error as Error & { statusCode?: number }).statusCode = 400;
+    throw error;
+  }
+
+  const base64 = input.file_data.includes(",")
+    ? input.file_data.split(",")[1]
+    : input.file_data;
+  const buffer = Buffer.from(base64, "base64");
+
+  if (buffer.length > 10 * 1024 * 1024) {
+    const error = new Error("File must be less than 10MB.");
+    (error as Error & { statusCode?: number }).statusCode = 400;
+    throw error;
+  }
+
+  const makeActive = input.is_active !== false;
+  if (makeActive) {
+    await prisma.almanacPdf.updateMany({ data: { is_active: false } });
+  }
+
+  const created = await prisma.almanacPdf.create({
+    data: {
+      title: input.title.trim(),
+      description: input.description || null,
+      year: input.year.trim(),
+      file_name: input.file_name || "almanac.pdf",
+      file_size: buffer.length,
+      file_data: buffer,
+      uploaded_by: input.uploaded_by,
+      is_active: makeActive,
+    },
+  });
+
+  return {
+    id: created.id,
+    title: created.title,
+    description: created.description,
+    year: created.year,
+    file_name: created.file_name,
+    file_size: created.file_size,
+    is_active: created.is_active,
+    created_date: created.created_date.toISOString(),
+    uploaded_by: created.uploaded_by,
+  };
+}
+
+export async function setActiveAlmanac(id: string): Promise<SerializedAlmanac | null> {
+  const existing = await prisma.almanacPdf.findUnique({ where: { id } });
+  if (!existing) return null;
+
+  await prisma.almanacPdf.updateMany({ data: { is_active: false } });
+  const updated = await prisma.almanacPdf.update({
+    where: { id },
+    data: { is_active: true },
+  });
+
+  return {
+    id: updated.id,
+    title: updated.title,
+    description: updated.description,
+    year: updated.year,
+    file_name: updated.file_name,
+    file_size: updated.file_size,
+    is_active: updated.is_active,
+    created_date: updated.created_date.toISOString(),
+    uploaded_by: updated.uploaded_by,
+  };
+}
+
+export async function deleteAlmanac(id: string): Promise<boolean> {
+  const existing = await prisma.almanacPdf.findUnique({ where: { id } });
+  if (!existing) return false;
+  await prisma.almanacPdf.delete({ where: { id } });
+  return true;
+}
+
+export async function getAlmanacFile(
+  id: string
+): Promise<{ file_data: Buffer; file_name: string } | null> {
+  const pdf = await prisma.almanacPdf.findUnique({
+    where: { id },
+    select: { file_data: true, file_name: true },
+  });
+  if (!pdf) return null;
+  return { file_data: Buffer.from(pdf.file_data), file_name: pdf.file_name };
 }
 
 export async function getBookmarkedEvents(userEmail: string): Promise<AlmanacEvent[]> {

@@ -37,4 +37,5 @@ export interface AlmanacEvent {
   is_featured?: boolean;
   banner_url?: string;
   max_capacity?: number | null;
+  tags?: string[];
 }

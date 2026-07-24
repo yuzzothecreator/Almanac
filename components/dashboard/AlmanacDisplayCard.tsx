@@ -40,14 +40,26 @@ export default function AlmanacDisplayCard({ almanac }: AlmanacDisplayCardProps)
                 `The complete academic calendar for the ${almanac.year} year.`}
             </p>
             <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
-              <Button className="gap-2 shadow-md w-full sm:w-auto">
-                <Eye className="w-4 h-4" /> View Almanac
+              <Button asChild className="gap-2 shadow-md w-full sm:w-auto">
+                <a
+                  href={`/api/almanac/${almanac.id}/download`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <Eye className="w-4 h-4" /> View Almanac
+                </a>
               </Button>
               <Button
+                asChild
                 variant="outline"
                 className="gap-2 bg-background/50 backdrop-blur-sm w-full sm:w-auto"
               >
-                <Download className="w-4 h-4" /> Download PDF
+                <a
+                  href={`/api/almanac/${almanac.id}/download`}
+                  download={almanac.file_name}
+                >
+                  <Download className="w-4 h-4" /> Download PDF
+                </a>
               </Button>
             </div>
           </div>
