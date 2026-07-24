@@ -13,7 +13,7 @@ export async function PATCH(request: Request, { params }: Params) {
   try {
     const { id } = await params;
     const user = await requireUserFromRequest(request);
-    assertRole(user, ["staff", "admin"]);
+    assertRole(user, ["staff", "admin", "super_admin"]);
     if (!canManageEvents(user)) {
       return NextResponse.json({ message: "Forbidden." }, { status: 403 });
     }
@@ -74,7 +74,7 @@ export async function DELETE(request: Request, { params }: Params) {
   try {
     const { id } = await params;
     const user = await requireUserFromRequest(request);
-    assertRole(user, ["staff", "admin"]);
+    assertRole(user, ["staff", "admin", "super_admin"]);
     if (!canManageEvents(user)) {
       return NextResponse.json({ message: "Forbidden." }, { status: 403 });
     }

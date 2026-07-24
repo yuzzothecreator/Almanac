@@ -4,7 +4,7 @@ import AdminAnalyticsView from "@/components/views/AdminAnalyticsView";
 
 export default function AdminAnalyticsPage() {
   return (
-    <ProtectedShell roles={["admin"]}>
+    <ProtectedShell roles={["admin", "super_admin"]}>
       <AppLayout>
         <AdminAnalyticsView />
       </AppLayout>

@@ -4,7 +4,7 @@ import AdminPanelView from "@/components/views/AdminPanelView";
 
 export default function AdminPage() {
   return (
-    <ProtectedShell roles={["staff", "admin"]}>
+    <ProtectedShell roles={["staff", "admin", "super_admin"]}>
       <AppLayout>
         <AdminPanelView />
       </AppLayout>

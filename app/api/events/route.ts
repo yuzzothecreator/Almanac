@@ -19,7 +19,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const user = await requireUserFromRequest(request);
-    assertRole(user, ["staff", "admin"]);
+    assertRole(user, ["staff", "admin", "super_admin"]);
     if (!canManageEvents(user)) {
       return NextResponse.json({ message: "Forbidden." }, { status: 403 });
     }

@@ -590,11 +590,20 @@ export async function listUsers(): Promise<ManagedUser[]> {
 }
 
 export async function updateUserByAdmin(
-  actor: { id: string },
+  actor: { id: string; role: string },
   targetId: string,
-  data: { role?: string; disabled?: boolean }
+  data: { role?: string; disabled?: boolean; is_verified?: boolean }
 ): Promise<ManagedUser> {
-  const allowedRoles = new Set(["student", "staff", "admin"]);
+  const actorIsSuper = actor.role === "super_admin";
+  const actorIsAdmin = actor.role === "admin" || actorIsSuper;
+
+  if (!actorIsAdmin) {
+    const error = new Error("Admin access required.");
+    (error as Error & { statusCode?: number }).statusCode = 403;
+    throw error;
+  }
+
+  const allowedRoles = new Set(["student", "staff", "admin", "super_admin"]);
   if (data.role !== undefined && !allowedRoles.has(data.role)) {
     const error = new Error("Invalid role.");
     (error as Error & { statusCode?: number }).statusCode = 400;
@@ -608,30 +617,78 @@ export async function updateUserByAdmin(
     throw error;
   }
 
+  const targetIsElevated =
+    target.role === "admin" || target.role === "super_admin";
+
+  // Regular admins: limited to student/staff role edits only
+  if (!actorIsSuper) {
+    if (data.disabled !== undefined) {
+      const error = new Error("Only a super admin can ban or unban users.");
+      (error as Error & { statusCode?: number }).statusCode = 403;
+      throw error;
+    }
+    if (data.is_verified !== undefined) {
+      const error = new Error("Only a super admin can change verification.");
+      (error as Error & { statusCode?: number }).statusCode = 403;
+      throw error;
+    }
+    if (targetIsElevated) {
+      const error = new Error(
+        "Only a super admin can manage admin or super admin accounts."
+      );
+      (error as Error & { statusCode?: number }).statusCode = 403;
+      throw error;
+    }
+    if (data.role !== undefined && !["student", "staff"].includes(data.role)) {
+      const error = new Error(
+        "Regular admins can only assign student or staff roles."
+      );
+      (error as Error & { statusCode?: number }).statusCode = 403;
+      throw error;
+    }
+  }
+
   const nextRole = data.role ?? target.role;
   const nextDisabled =
     data.disabled !== undefined ? data.disabled : target.disabled;
 
-  const removingOwnAdmin =
-    target.id === actor.id &&
-    (nextDisabled === true || nextRole !== "admin");
-
-  if (removingOwnAdmin) {
-    const error = new Error("You cannot remove your own admin access.");
-    (error as Error & { statusCode?: number }).statusCode = 403;
-    throw error;
+  if (target.id === actor.id) {
+    if (nextDisabled === true || (data.role && data.role !== actor.role)) {
+      const error = new Error("You cannot ban or change your own role.");
+      (error as Error & { statusCode?: number }).statusCode = 403;
+      throw error;
+    }
   }
 
-  const demotingOrDisablingAdmin =
-    target.role === "admin" &&
-    (nextDisabled === true || nextRole !== "admin");
-
-  if (demotingOrDisablingAdmin) {
-    const adminCount = await prisma.user.count({
-      where: { role: "admin", disabled: false },
+  if (
+    target.role === "super_admin" &&
+    (nextDisabled === true || nextRole !== "super_admin")
+  ) {
+    const superCount = await prisma.user.count({
+      where: { role: "super_admin", disabled: false },
     });
-    if (adminCount <= 1) {
-      const error = new Error("At least one active admin is required.");
+    if (superCount <= 1) {
+      const error = new Error("At least one active super admin is required.");
+      (error as Error & { statusCode?: number }).statusCode = 403;
+      throw error;
+    }
+  }
+
+  const wouldLoseElevatedAccess =
+    targetIsElevated &&
+    (nextDisabled === true || !["admin", "super_admin"].includes(nextRole));
+
+  if (wouldLoseElevatedAccess) {
+    const elevatedCount = await prisma.user.count({
+      where: {
+        role: { in: ["admin", "super_admin"] },
+        disabled: false,
+      },
+    });
+    if (elevatedCount <= 1) {
+      const error = new Error(
+        "At least one active admin or super admin is required."
+      );
       (error as Error & { statusCode?: number }).statusCode = 403;
       throw error;
     }
@@ -642,6 +699,9 @@ export async function updateUserByAdmin(
     data: {
       ...(data.role !== undefined ? { role: data.role } : {}),
       ...(data.disabled !== undefined ? { disabled: data.disabled } : {}),
+      ...(data.is_verified !== undefined
+        ? { is_verified: data.is_verified }
+        : {}),
     },
   });
 

@@ -1,6 +1,6 @@
 import { createClerkClient, verifyToken } from "@clerk/backend";
 import { prisma } from "@/lib/db";
-import type { UserRole } from "@/lib/types";
+import { isValidRole, type UserRole } from "@/lib/types";
 
 export type AppUser = {
   id: string;
@@ -14,6 +14,19 @@ export type AppUser = {
   last_login_at: string | null;
 };
 
+function getSuperAdminEmails(): Set<string> {
+  return new Set(
+    (process.env.SUPER_ADMIN_EMAILS || "")
+      .split(",")
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean)
+  );
+}
+
+function normalizeRole(role: string): UserRole {
+  return isValidRole(role) ? role : "student";
+}
+
 function toAppUser(user: {
   id: string;
   email: string;
@@ -25,15 +38,11 @@ function toAppUser(user: {
   updated_date: Date;
   last_login_at: Date | null;
 }): AppUser {
-  const role = (["student", "staff", "admin"].includes(user.role)
-    ? user.role
-    : "student") as UserRole;
-
   return {
     id: user.id,
     email: user.email,
     full_name: user.full_name,
-    role,
+    role: normalizeRole(user.role),
     is_verified: user.is_verified,
     disabled: user.disabled,
     created_date: user.created_date.toISOString(),
@@ -63,11 +72,13 @@ export async function syncUserFromClerkToken(token: string): Promise<AppUser | n
   const email = clerkUser.emailAddresses[0]?.emailAddress?.toLowerCase();
   if (!email) return null;
 
+  const superEmails = getSuperAdminEmails();
   let user = await prisma.user.findUnique({ where: { email } });
 
   if (!user) {
     const userCount = await prisma.user.count();
-    const role = userCount === 0 ? "admin" : "student";
+    const role: UserRole =
+      userCount === 0 || superEmails.has(email) ? "super_admin" : "student";
     const fullName = clerkUser.firstName
       ? `${clerkUser.firstName} ${clerkUser.lastName || ""}`.trim()
       : email.split("@")[0];
@@ -84,9 +95,17 @@ export async function syncUserFromClerkToken(token: string): Promise<AppUser | n
       },
     });
   } else {
+    const patch: { last_login_at: Date; is_verified: boolean; role?: string } = {
+      last_login_at: new Date(),
+      is_verified: true,
+    };
+    // Bootstrap listed emails to super_admin without demoting existing super_admins
+    if (superEmails.has(email) && user.role !== "super_admin") {
+      patch.role = "super_admin";
+    }
     user = await prisma.user.update({
       where: { id: user.id },
-      data: { last_login_at: new Date(), is_verified: true },
+      data: patch,
     });
   }
 
@@ -132,10 +151,23 @@ export function assertRole(user: AppUser, roles: UserRole[]): void {
   }
 }
 
-export function canManageEvents(user: AppUser): boolean {
-  return user.role === "staff" || user.role === "admin";
+export function isSuperAdmin(user: Pick<AppUser, "role">): boolean {
+  return user.role === "super_admin";
 }
 
-export function isAdmin(user: AppUser): boolean {
-  return user.role === "admin";
+/** Platform admin level (admin or super_admin). */
+export function isAdmin(user: Pick<AppUser, "role">): boolean {
+  return user.role === "admin" || user.role === "super_admin";
+}
+
+export function canManageEvents(user: Pick<AppUser, "role">): boolean {
+  return user.role === "staff" || isAdmin(user);
+}
+
+export function canManageUsers(user: Pick<AppUser, "role">): boolean {
+  return isAdmin(user);
+}
+
+export function canBanUsers(user: Pick<AppUser, "role">): boolean {
+  return isSuperAdmin(user);
 }

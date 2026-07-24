@@ -136,7 +136,11 @@ export default function Sidebar() {
 
   const role = user?.role || "student";
   const items =
-    role === "admin" ? adminNav : role === "staff" ? staffNav : studentNav;
+    role === "admin" || role === "super_admin"
+      ? adminNav
+      : role === "staff"
+        ? staffNav
+        : studentNav;
 
   // Lock body scroll while mobile drawer is open
   useEffect(() => {

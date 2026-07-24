@@ -4,7 +4,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import {
+  Ban,
   Briefcase,
+  CheckCircle2,
+  Crown,
   FilterX,
   GraduationCap,
   Search,
@@ -25,22 +28,32 @@ import { useAuthedFetch } from "@/lib/useAuthedFetch";
 import type { UserRole } from "@/lib/types";
 
 const roleColors: Record<string, string> = {
+  super_admin: "bg-amber-50 text-amber-700",
   admin: "bg-red-50 text-red-600",
   staff: "bg-blue-50 text-blue-600",
   student: "bg-green-50 text-green-600",
 };
 
+const roleLabels: Record<string, string> = {
+  super_admin: "Super Admin",
+  admin: "Admin",
+  staff: "Staff",
+  student: "Student",
+};
+
 export default function AdminUsersView() {
   const { user } = useAuth();
   const authedFetch = useAuthedFetch();
+  const isSuper = user?.role === "super_admin";
+
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<UserRole | "all">("all");
-  const [accessFilter, setAccessFilter] = useState<"all" | "active" | "disabled">(
-    "all"
-  );
+  const [accessFilter, setAccessFilter] = useState<
+    "all" | "active" | "banned" | "unverified"
+  >("all");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -64,12 +77,12 @@ export default function AdminUsersView() {
   }, [load]);
 
   const counts = useMemo(() => {
+    const supers = users.filter((u) => u.role === "super_admin").length;
     const admins = users.filter((u) => u.role === "admin").length;
     const staff = users.filter((u) => u.role === "staff").length;
-    const students = users.filter(
-      (u) => !u.role || u.role === "student"
-    ).length;
-    return { admins, staff, students, total: users.length };
+    const students = users.filter((u) => u.role === "student" || !u.role).length;
+    const banned = users.filter((u) => u.disabled).length;
+    return { supers, admins, staff, students, banned, total: users.length };
   }, [users]);
 
   const hasActiveFilters =
@@ -79,8 +92,9 @@ export default function AdminUsersView() {
     const q = search.trim().toLowerCase();
     return users.filter((u) => {
       if (roleFilter !== "all" && u.role !== roleFilter) return false;
-      if (accessFilter === "active" && u.disabled) return false;
-      if (accessFilter === "disabled" && !u.disabled) return false;
+      if (accessFilter === "active" && (u.disabled || !u.is_verified)) return false;
+      if (accessFilter === "banned" && !u.disabled) return false;
+      if (accessFilter === "unverified" && u.is_verified) return false;
       if (q) {
         const hay = `${u.full_name || ""} ${u.email} ${u.role}`.toLowerCase();
         if (!hay.includes(q)) return false;
@@ -89,9 +103,26 @@ export default function AdminUsersView() {
     });
   }, [users, search, roleFilter, accessFilter]);
 
+  const canEditTarget = (target: ManagedUser) => {
+    if (target.id === user?.id) return false;
+    if (isSuper) return true;
+    return target.role === "student" || target.role === "staff";
+  };
+
+  const roleOptionsFor = (target: ManagedUser): UserRole[] => {
+    if (isSuper) {
+      return ["student", "staff", "admin", "super_admin"];
+    }
+    if (target.role === "student" || target.role === "staff") {
+      return ["student", "staff"];
+    }
+    return [target.role as UserRole];
+  };
+
   const updateUser = async (
     id: string,
-    data: { role?: string; disabled?: boolean }
+    data: { role?: string; disabled?: boolean; is_verified?: boolean },
+    successMessage = "User updated"
   ) => {
     setBusyId(id);
     try {
@@ -105,7 +136,7 @@ export default function AdminUsersView() {
       }
       const updated = (await res.json()) as ManagedUser;
       setUsers((prev) => prev.map((u) => (u.id === id ? updated : u)));
-      toast.success("User updated");
+      toast.success(successMessage);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Update failed");
     } finally {
@@ -121,11 +152,13 @@ export default function AdminUsersView() {
           User Management
         </h1>
         <p className="text-sm text-muted-foreground">
-          View and manage platform roles and access
+          {isSuper
+            ? "Super admin: roles, verification, and ban controls"
+            : "Admin: assign student/staff roles. Ban requires a super admin."}
         </p>
       </motion.div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2 sm:gap-4">
         <StatsCard
           title="Total Users"
           value={counts.total}
@@ -134,25 +167,32 @@ export default function AdminUsersView() {
           index={0}
         />
         <StatsCard
+          title="Super Admins"
+          value={counts.supers}
+          icon={Crown}
+          color="amber"
+          index={1}
+        />
+        <StatsCard
           title="Admins"
           value={counts.admins}
           icon={Shield}
           color="red"
-          index={1}
+          index={2}
         />
         <StatsCard
           title="Staff"
           value={counts.staff}
           icon={Briefcase}
           color="blue"
-          index={2}
+          index={3}
         />
         <StatsCard
           title="Students"
           value={counts.students}
           icon={GraduationCap}
           color="green"
-          index={3}
+          index={4}
         />
       </div>
 
@@ -175,6 +215,11 @@ export default function AdminUsersView() {
               </span>{" "}
               of{" "}
               <span className="font-medium text-foreground">{users.length}</span>
+              {counts.banned > 0 && (
+                <span className="ml-2 text-destructive">
+                  · {counts.banned} banned
+                </span>
+              )}
             </span>
             {hasActiveFilters && (
               <Button
@@ -205,6 +250,7 @@ export default function AdminUsersView() {
               }
             >
               <option value="all">All roles</option>
+              <option value="super_admin">Super Admin</option>
               <option value="admin">Admin</option>
               <option value="staff">Staff</option>
               <option value="student">Student</option>
@@ -217,13 +263,14 @@ export default function AdminUsersView() {
               value={accessFilter}
               onChange={(e) =>
                 setAccessFilter(
-                  e.target.value as "all" | "active" | "disabled"
+                  e.target.value as "all" | "active" | "banned" | "unverified"
                 )
               }
             >
               <option value="all">All access</option>
               <option value="active">Active</option>
-              <option value="disabled">Disabled</option>
+              <option value="banned">Banned</option>
+              <option value="unverified">Unverified</option>
             </Select>
           </div>
         </div>
@@ -231,21 +278,24 @@ export default function AdminUsersView() {
 
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[760px]">
+          <table className="w-full text-sm min-w-[900px]">
             <thead>
               <tr className="border-b border-border bg-muted/40 text-left">
                 <th className="px-4 py-3 font-medium">User</th>
                 <th className="px-4 py-3 font-medium">Email</th>
                 <th className="px-4 py-3 font-medium">Role</th>
                 <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Joined</th>
-                <th className="px-4 py-3 font-medium text-right">Access</th>
+                <th className="px-4 py-3 font-medium">Last login</th>
+                <th className="px-4 py-3 font-medium text-right">Manage</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((u) => {
                 const isSelf = u.id === user?.id;
                 const busy = busyId === u.id;
+                const editable = canEditTarget(u);
+                const options = roleOptionsFor(u);
+
                 return (
                   <tr
                     key={u.id}
@@ -267,65 +317,133 @@ export default function AdminUsersView() {
                               </span>
                             )}
                           </p>
+                          <p className="text-[11px] text-muted-foreground">
+                            Joined{" "}
+                            {u.created_date
+                              ? format(new Date(u.created_date), "MMM d, yyyy")
+                              : "—"}
+                          </p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground break-all max-w-[220px]">
+                    <td className="px-4 py-3 text-muted-foreground break-all max-w-[200px]">
                       {u.email}
                     </td>
                     <td className="px-4 py-3">
-                      <Select
-                        value={u.role || "student"}
-                        disabled={busy || isSelf}
-                        onChange={(e) =>
-                          void updateUser(u.id, { role: e.target.value })
-                        }
-                        className="h-8 w-[120px]"
-                        aria-label={`Role for ${u.email}`}
-                      >
-                        <option value="student">Student</option>
-                        <option value="staff">Staff</option>
-                        <option value="admin">Admin</option>
-                      </Select>
+                      {editable ? (
+                        <Select
+                          value={u.role || "student"}
+                          disabled={busy}
+                          onChange={(e) =>
+                            void updateUser(
+                              u.id,
+                              { role: e.target.value },
+                              "Role updated"
+                            )
+                          }
+                          className="h-8 w-[140px]"
+                          aria-label={`Role for ${u.email}`}
+                        >
+                          {options.map((role) => (
+                            <option key={role} value={role}>
+                              {roleLabels[role]}
+                            </option>
+                          ))}
+                        </Select>
+                      ) : (
+                        <Badge
+                          className={`text-xs ${
+                            roleColors[u.role] || roleColors.student
+                          }`}
+                        >
+                          {roleLabels[u.role] || u.role}
+                        </Badge>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <Badge
                         className={`text-xs ${
                           u.disabled
-                            ? "bg-slate-100 text-slate-600"
-                            : roleColors[u.role] || roleColors.student
+                            ? "bg-red-50 text-red-700"
+                            : !u.is_verified
+                              ? "bg-slate-100 text-slate-600"
+                              : roleColors[u.role] || roleColors.student
                         }`}
                       >
                         {u.disabled
-                          ? "disabled"
+                          ? "banned"
                           : u.is_verified
                             ? "active"
                             : "unverified"}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                      {u.created_date
-                        ? format(new Date(u.created_date), "MMM d, yyyy")
-                        : "—"}
+                    <td className="px-4 py-3 text-muted-foreground whitespace-nowrap text-xs">
+                      {u.last_login_at
+                        ? format(new Date(u.last_login_at), "MMM d, yyyy HH:mm")
+                        : "Never"}
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      <label className="inline-flex items-center gap-2 text-xs text-muted-foreground">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 rounded border-input"
-                          checked={!u.disabled}
-                          disabled={busy || isSelf}
-                          onChange={(e) =>
-                            void updateUser(u.id, {
-                              disabled: !e.target.checked,
-                            })
-                          }
-                          aria-label={
-                            u.disabled ? "Enable user" : "Disable user"
-                          }
-                        />
-                        {u.disabled ? "Off" : "On"}
-                      </label>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                        {isSuper && editable && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs gap-1"
+                            disabled={busy}
+                            onClick={() =>
+                              void updateUser(
+                                u.id,
+                                { is_verified: !u.is_verified },
+                                u.is_verified
+                                  ? "Marked unverified"
+                                  : "User verified"
+                              )
+                            }
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            {u.is_verified ? "Unverify" : "Verify"}
+                          </Button>
+                        )}
+
+                        {isSuper && editable && (
+                          <Button
+                            type="button"
+                            variant={u.disabled ? "secondary" : "destructive"}
+                            size="sm"
+                            className="h-8 text-xs gap-1"
+                            disabled={busy}
+                            onClick={() => {
+                              const next = !u.disabled;
+                              const ok = confirm(
+                                next
+                                  ? `Ban ${u.full_name || u.email}? They will not be able to sign in.`
+                                  : `Unban ${u.full_name || u.email}?`
+                              );
+                              if (!ok) return;
+                              void updateUser(
+                                u.id,
+                                { disabled: next },
+                                next ? "User banned" : "User unbanned"
+                              );
+                            }}
+                          >
+                            <Ban className="w-3.5 h-3.5" />
+                            {u.disabled ? "Unban" : "Ban"}
+                          </Button>
+                        )}
+
+                        {!isSuper && !editable && !isSelf && (
+                          <span className="text-[11px] text-muted-foreground">
+                            Super admin only
+                          </span>
+                        )}
+                        {isSelf && (
+                          <span className="text-[11px] text-muted-foreground">
+                            Your account
+                          </span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );

@@ -117,7 +117,8 @@ export default function AdminPanelView() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  const canUploadAlmanac = user?.role === "admin";
+  const canUploadAlmanac =
+    user?.role === "admin" || user?.role === "super_admin";
 
   const load = useCallback(async () => {
     setLoading(true);

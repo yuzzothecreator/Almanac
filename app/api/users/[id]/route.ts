@@ -9,16 +9,20 @@ export async function PATCH(request: Request, { params }: Params) {
   try {
     const { id } = await params;
     const actor = await requireUserFromRequest(request);
-    assertRole(actor, ["admin"]);
+    assertRole(actor, ["admin", "super_admin"]);
 
     const body = (await request.json()) as {
       role?: string;
       disabled?: boolean;
+      is_verified?: boolean;
     };
 
     const updated = await updateUserByAdmin(actor, id, {
       ...(body.role !== undefined ? { role: body.role } : {}),
       ...(body.disabled !== undefined ? { disabled: body.disabled } : {}),
+      ...(body.is_verified !== undefined
+        ? { is_verified: body.is_verified }
+        : {}),
     });
 
     return NextResponse.json(updated);

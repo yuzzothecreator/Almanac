@@ -45,7 +45,10 @@ export default function HomeView({
   const cancelledEvents = events.filter((e) => e.status === "cancelled");
   const featuredEvents = upcomingEvents.filter((e) => e.is_featured).slice(0, 3);
   const nextEvents = upcomingEvents.slice(0, 6);
-  const canManage = user?.role === "admin" || user?.role === "staff";
+  const canManage =
+    user?.role === "admin" ||
+    user?.role === "super_admin" ||
+    user?.role === "staff";
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto">

@@ -14,7 +14,7 @@ const DefaultFallback = () => (
 
 interface ProtectedShellProps {
   children: React.ReactNode;
-  roles?: Array<"student" | "staff" | "admin">;
+  roles?: Array<"student" | "staff" | "admin" | "super_admin">;
 }
 
 export default function ProtectedShell({ children, roles }: ProtectedShellProps) {

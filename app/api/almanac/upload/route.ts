@@ -6,7 +6,7 @@ import { uploadAlmanac } from "@/lib/data";
 export async function POST(request: Request) {
   try {
     const user = await requireUserFromRequest(request);
-    assertRole(user, ["admin"]);
+    assertRole(user, ["admin", "super_admin"]);
 
     const body = (await request.json()) as {
       title?: string;

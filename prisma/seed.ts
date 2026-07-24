@@ -40,14 +40,14 @@ async function main() {
     where: { email: "admin@almanac.app" },
     update: {
       full_name: "Almanac Admin",
-      role: "admin",
+      role: "super_admin",
       is_verified: true,
     },
     create: {
       email: "admin@almanac.app",
       full_name: "Almanac Admin",
       password_hash: passwordHash,
-      role: "admin",
+      role: "super_admin",
       is_verified: true,
     },
   });

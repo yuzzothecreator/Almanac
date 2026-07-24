@@ -9,7 +9,7 @@ export async function DELETE(request: Request, { params }: Params) {
   try {
     const { id } = await params;
     const user = await requireUserFromRequest(request);
-    assertRole(user, ["admin"]);
+    assertRole(user, ["admin", "super_admin"]);
 
     const ok = await deleteAlmanac(id);
     if (!ok) {
@@ -26,7 +26,7 @@ export async function PATCH(request: Request, { params }: Params) {
   try {
     const { id } = await params;
     const user = await requireUserFromRequest(request);
-    assertRole(user, ["admin"]);
+    assertRole(user, ["admin", "super_admin"]);
 
     const body = (await request.json().catch(() => ({}))) as { action?: string };
     if (body.action !== "set-active") {
