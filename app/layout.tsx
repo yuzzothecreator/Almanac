@@ -72,7 +72,7 @@ export const metadata: Metadata = {
         url: "/logo.png",
         width: 512,
         height: 512,
-        alt: "ALMANAC crest",
+        alt: "ALMANAC",
       },
     ],
   },

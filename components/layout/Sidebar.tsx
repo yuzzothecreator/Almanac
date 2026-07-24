@@ -54,12 +54,12 @@ const adminNav = [
 function BrandMark({ compact = false }: { compact?: boolean }) {
   return (
     <div className="flex items-center gap-2.5 min-w-0">
-      <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden bg-black ring-1 ring-white/10">
+      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden bg-white/95 ring-1 ring-white/20">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/logo.png"
           alt="Almanac"
-          className="w-full h-full object-contain"
+          className="w-full h-full object-contain p-0.5"
         />
       </div>
       {!compact && (
@@ -179,12 +179,12 @@ export default function Sidebar() {
       >
         <div className="h-14 px-3 flex items-center justify-between gap-3">
           <Link href="/" className="flex items-center gap-2.5 min-w-0">
-            <div className="w-10 h-10 rounded-lg flex-shrink-0 overflow-hidden bg-black ring-1 ring-border/80">
+            <div className="w-9 h-9 rounded-xl flex-shrink-0 overflow-hidden bg-white ring-1 ring-border/60 shadow-sm">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/logo.png"
                 alt="Almanac"
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain p-0.5"
               />
             </div>
             <div className="min-w-0">

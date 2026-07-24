@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { format } from "date-fns";
 import {
+  CalendarRange,
   CheckCircle2,
+  FileText,
   Loader2,
   Trash2,
   Upload,
@@ -135,12 +137,7 @@ export default function AdminAlmanacUpload({ canUpload }: AdminAlmanacUploadProp
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="min-w-0">
               <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/logo.png"
-                  alt=""
-                  className="w-7 h-7 rounded-md object-contain bg-black ring-1 ring-border flex-shrink-0"
-                />
+                <CalendarRange className="w-5 h-5 text-primary flex-shrink-0" />
                 University Almanac
               </CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
@@ -169,12 +166,7 @@ export default function AdminAlmanacUpload({ canUpload }: AdminAlmanacUploadProp
             </div>
           ) : almanacs.length === 0 ? (
             <div className="py-8 text-center bg-accent/20 rounded-lg border border-dashed">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/logo.png"
-                alt=""
-                className="w-12 h-12 mx-auto mb-3 object-contain rounded-lg bg-black ring-1 ring-border opacity-80"
-              />
+              <FileText className="w-8 h-8 text-muted-foreground/50 mx-auto mb-2" />
               <p className="text-sm text-muted-foreground">No almanacs uploaded yet.</p>
             </div>
           ) : (
@@ -190,18 +182,13 @@ export default function AdminAlmanacUpload({ canUpload }: AdminAlmanacUploadProp
                 >
                   <div className="flex items-start gap-3 min-w-0">
                     <div
-                      className={`rounded-md flex-shrink-0 overflow-hidden ring-1 ring-black/10 ${
-                        almanac.is_active ? "bg-black" : "bg-muted"
+                      className={`p-2 rounded-md flex-shrink-0 ${
+                        almanac.is_active
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground"
                       }`}
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src="/logo.png"
-                        alt=""
-                        className={`w-10 h-10 object-contain ${
-                          almanac.is_active ? "" : "opacity-70 grayscale"
-                        }`}
-                      />
+                      <FileText className="w-5 h-5" />
                     </div>
                     <div className="min-w-0">
                       <h4 className="font-medium text-sm flex flex-wrap items-center gap-2">
