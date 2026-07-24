@@ -550,3 +550,109 @@ export async function detectAndCreateNotifications(
 
   return getNotifications(userEmail);
 }
+
+export type ManagedUser = {
+  id: string;
+  email: string;
+  full_name: string | null;
+  role: string;
+  is_verified: boolean;
+  disabled: boolean;
+  created_date: string;
+  last_login_at: string | null;
+};
+
+export async function listUsers(): Promise<ManagedUser[]> {
+  const rows = await prisma.user.findMany({
+    orderBy: { created_date: "desc" },
+    select: {
+      id: true,
+      email: true,
+      full_name: true,
+      role: true,
+      is_verified: true,
+      disabled: true,
+      created_date: true,
+      last_login_at: true,
+    },
+  });
+
+  return rows.map((u) => ({
+    id: u.id,
+    email: u.email,
+    full_name: u.full_name,
+    role: u.role,
+    is_verified: u.is_verified,
+    disabled: u.disabled,
+    created_date: u.created_date.toISOString(),
+    last_login_at: u.last_login_at?.toISOString() ?? null,
+  }));
+}
+
+export async function updateUserByAdmin(
+  actor: { id: string },
+  targetId: string,
+  data: { role?: string; disabled?: boolean }
+): Promise<ManagedUser> {
+  const allowedRoles = new Set(["student", "staff", "admin"]);
+  if (data.role !== undefined && !allowedRoles.has(data.role)) {
+    const error = new Error("Invalid role.");
+    (error as Error & { statusCode?: number }).statusCode = 400;
+    throw error;
+  }
+
+  const target = await prisma.user.findUnique({ where: { id: targetId } });
+  if (!target) {
+    const error = new Error("User not found.");
+    (error as Error & { statusCode?: number }).statusCode = 404;
+    throw error;
+  }
+
+  const nextRole = data.role ?? target.role;
+  const nextDisabled =
+    data.disabled !== undefined ? data.disabled : target.disabled;
+
+  const removingOwnAdmin =
+    target.id === actor.id &&
+    (nextDisabled === true || nextRole !== "admin");
+
+  if (removingOwnAdmin) {
+    const error = new Error("You cannot remove your own admin access.");
+    (error as Error & { statusCode?: number }).statusCode = 403;
+    throw error;
+  }
+
+  const demotingOrDisablingAdmin =
+    target.role === "admin" &&
+    (nextDisabled === true || nextRole !== "admin");
+
+  if (demotingOrDisablingAdmin) {
+    const adminCount = await prisma.user.count({
+      where: { role: "admin", disabled: false },
+    });
+    if (adminCount <= 1) {
+      const error = new Error("At least one active admin is required.");
+      (error as Error & { statusCode?: number }).statusCode = 403;
+      throw error;
+    }
+  }
+
+  const updated = await prisma.user.update({
+    where: { id: targetId },
+    data: {
+      ...(data.role !== undefined ? { role: data.role } : {}),
+      ...(data.disabled !== undefined ? { disabled: data.disabled } : {}),
+    },
+  });
+
+  return {
+    id: updated.id,
+    email: updated.email,
+    full_name: updated.full_name,
+    role: updated.role,
+    is_verified: updated.is_verified,
+    disabled: updated.disabled,
+    created_date: updated.created_date.toISOString(),
+    last_login_at: updated.last_login_at?.toISOString() ?? null,
+  };
+}
