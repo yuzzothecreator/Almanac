@@ -68,6 +68,12 @@ export const metadata: Metadata = {
         height: 630,
         alt: "ALMANAC — University Events Almanac",
       },
+      {
+        url: "/logo.png",
+        width: 512,
+        height: 512,
+        alt: "ALMANAC crest",
+      },
     ],
   },
   twitter: {

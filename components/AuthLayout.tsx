@@ -1,7 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 
 interface AuthLayoutProps {
-  icon: LucideIcon;
+  icon?: LucideIcon;
   title: string;
   subtitle?: string;
   footer?: React.ReactNode;
@@ -19,9 +19,19 @@ export default function AuthLayout({
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8 overflow-x-clip">
       <div className="w-full max-w-md">
         <div className="text-center mb-8 sm:mb-10">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary mb-4">
-            <Icon className="w-7 h-7 text-primary-foreground" aria-hidden="true" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-black ring-1 ring-border mb-4 overflow-hidden shadow-sm">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.png"
+              alt="Almanac"
+              className="w-full h-full object-contain"
+            />
           </div>
+          {Icon && (
+            <span className="sr-only">
+              <Icon aria-hidden="true" />
+            </span>
+          )}
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground break-words">
             {title}
           </h1>
