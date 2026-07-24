@@ -43,7 +43,6 @@ const adminNav = [
   { path: "/", icon: LayoutDashboard, label: "Dashboard" },
   { path: "/calendar", icon: Calendar, label: "Calendar" },
   { path: "/events", icon: BookOpen, label: "Events" },
-  { path: "/registrations", icon: ClipboardList, label: "My Registrations" },
   { path: "/admin", icon: Settings, label: "Admin Panel" },
   { path: "/admin/analytics", icon: BarChart3, label: "Analytics" },
   { path: "/admin/users", icon: Users, label: "Users" },
