@@ -98,7 +98,9 @@ function NavLinks({
             key={item.path}
             href={item.path}
             onClick={onNavigate}
+            title={collapsed ? item.label : undefined}
             className={`flex items-center gap-3 px-3 py-2.5 min-h-11 rounded-xl text-sm font-medium transition-all duration-200 group
+              ${collapsed ? "justify-center px-2" : ""}
               ${
                 isActive
                   ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-primary/20"
@@ -282,16 +284,29 @@ export default function Sidebar() {
 
       {/* Desktop sidebar */}
       <aside
-        className={`hidden lg:flex flex-col fixed left-0 top-0 bottom-0 bg-sidebar border-r border-sidebar-border z-30 transition-all duration-300 ${
+        className={`hidden lg:flex flex-col fixed left-0 top-0 bottom-0 bg-sidebar border-r border-sidebar-border z-40 transition-all duration-300 ${
           collapsed ? "w-[72px]" : "w-[240px]"
         }`}
       >
         <div
-          className={`p-4 flex items-center ${
-            collapsed ? "justify-center" : "gap-3"
+          className={`p-3 border-b border-sidebar-border flex items-center flex-shrink-0 ${
+            collapsed ? "flex-col gap-2" : "justify-between gap-2"
           }`}
         >
           <BrandMark compact={collapsed} />
+          <button
+            type="button"
+            onClick={() => setCollapsed((prev) => !prev)}
+            className="inline-flex items-center justify-center h-8 w-8 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors flex-shrink-0"
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={collapsed ? "Expand" : "Collapse"}
+          >
+            {collapsed ? (
+              <ChevronRight className="w-4 h-4" />
+            ) : (
+              <ChevronLeft className="w-4 h-4" />
+            )}
+          </button>
         </div>
 
         <NavLinks
@@ -301,7 +316,7 @@ export default function Sidebar() {
           collapsed={collapsed}
         />
 
-        <div className="p-3 border-t border-sidebar-border space-y-2">
+        <div className="p-3 border-t border-sidebar-border space-y-2 flex-shrink-0">
           {!collapsed && user && (
             <div className="px-3 py-2 min-w-0">
               <p className="text-xs text-sidebar-foreground/80 font-medium truncate">
@@ -324,19 +339,6 @@ export default function Sidebar() {
             {!collapsed && <span>Sign Out</span>}
           </button>
         </div>
-
-        <button
-          type="button"
-          onClick={() => setCollapsed((prev) => !prev)}
-          className="absolute -right-3 top-20 w-8 h-8 rounded-full bg-card border shadow-sm flex items-center justify-center hover:bg-accent transition-colors"
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {collapsed ? (
-            <ChevronRight className="w-3 h-3" />
-          ) : (
-            <ChevronLeft className="w-3 h-3" />
-          )}
-        </button>
       </aside>
     </>
   );
