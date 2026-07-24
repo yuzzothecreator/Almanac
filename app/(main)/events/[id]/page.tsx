@@ -5,6 +5,7 @@ import { ArrowLeft, Calendar, Clock, MapPin, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import EventRegisterSection from "@/components/events/EventRegisterSection";
 import { getEventById } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
@@ -74,9 +75,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
           )}
         </div>
 
-        <div className="pt-4 border-t">
-          <Button className="w-full sm:w-auto">Register for event</Button>
-        </div>
+        <EventRegisterSection event={event} />
       </Card>
     </div>
   );

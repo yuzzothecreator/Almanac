@@ -16,6 +16,7 @@ type EventRecord = {
   priority: string;
   banner_url: string | null;
   is_featured: boolean;
+  max_capacity?: number | null;
 };
 
 export function serializeEvent(event: EventRecord): AlmanacEvent {
@@ -34,6 +35,7 @@ export function serializeEvent(event: EventRecord): AlmanacEvent {
     priority: event.priority as EventPriority,
     banner_url: event.banner_url ?? undefined,
     is_featured: event.is_featured,
+    max_capacity: event.max_capacity ?? null,
   };
 }
 

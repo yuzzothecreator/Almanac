@@ -36,4 +36,5 @@ export interface AlmanacEvent {
   department?: string;
   is_featured?: boolean;
   banner_url?: string;
+  max_capacity?: number | null;
 }

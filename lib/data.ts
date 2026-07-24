@@ -45,6 +45,132 @@ export async function getRegistrations(): Promise<SerializedRegistration[]> {
   }));
 }
 
+export async function getEventRegistrationCount(eventId: string): Promise<number> {
+  return prisma.registration.count({ where: { event_id: eventId } });
+}
+
+export async function getUserEventRegistration(
+  eventId: string,
+  userEmail: string
+): Promise<SerializedRegistration | null> {
+  const row = await prisma.registration.findUnique({
+    where: {
+      event_id_user_email: {
+        event_id: eventId,
+        user_email: userEmail,
+      },
+    },
+  });
+
+  if (!row) return null;
+  return {
+    id: row.id,
+    event_id: row.event_id,
+    user_email: row.user_email,
+    user_name: row.user_name,
+    status: row.status,
+  };
+}
+
+export async function registerForEvent(input: {
+  eventId: string;
+  userEmail: string;
+  userName?: string | null;
+}): Promise<{ registration: SerializedRegistration; created: boolean }> {
+  const event = await prisma.event.findUnique({ where: { id: input.eventId } });
+  if (!event) {
+    const error = new Error("Event not found.");
+    (error as Error & { statusCode?: number }).statusCode = 404;
+    throw error;
+  }
+
+  if (event.status !== "published") {
+    const error = new Error("Only published events accept registrations.");
+    (error as Error & { statusCode?: number }).statusCode = 400;
+    throw error;
+  }
+
+  const existing = await prisma.registration.findUnique({
+    where: {
+      event_id_user_email: {
+        event_id: input.eventId,
+        user_email: input.userEmail,
+      },
+    },
+  });
+
+  if (existing) {
+    return {
+      registration: {
+        id: existing.id,
+        event_id: existing.event_id,
+        user_email: existing.user_email,
+        user_name: existing.user_name,
+        status: existing.status,
+      },
+      created: false,
+    };
+  }
+
+  if (event.max_capacity != null) {
+    const count = await prisma.registration.count({ where: { event_id: input.eventId } });
+    if (count >= event.max_capacity) {
+      const error = new Error("This event is full.");
+      (error as Error & { statusCode?: number }).statusCode = 409;
+      throw error;
+    }
+  }
+
+  const created = await prisma.registration.create({
+    data: {
+      event_id: input.eventId,
+      user_email: input.userEmail,
+      user_name: input.userName || null,
+      status: "registered",
+    },
+  });
+
+  await prisma.notification.create({
+    data: {
+      event_id: input.eventId,
+      user_email: input.userEmail,
+      type: "registration",
+      title: "Registration confirmed",
+      message: `You are registered for ${event.title}.`,
+      is_read: false,
+    },
+  });
+
+  return {
+    registration: {
+      id: created.id,
+      event_id: created.event_id,
+      user_email: created.user_email,
+      user_name: created.user_name,
+      status: created.status,
+    },
+    created: true,
+  };
+}
+
+export async function cancelEventRegistration(
+  eventId: string,
+  userEmail: string
+): Promise<boolean> {
+  const existing = await prisma.registration.findUnique({
+    where: {
+      event_id_user_email: {
+        event_id: eventId,
+        user_email: userEmail,
+      },
+    },
+  });
+  if (!existing) return false;
+
+  await prisma.registration.delete({ where: { id: existing.id } });
+  return true;
+}
+
 export async function getActiveAlmanac(): Promise<SerializedAlmanac | null> {
   const almanac = await prisma.almanacPdf.findFirst({
     where: { is_active: true },
