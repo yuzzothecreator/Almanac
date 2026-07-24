@@ -171,6 +171,30 @@ export async function cancelEventRegistration(
   return true;
 }
 
+export type UserRegistrationItem = {
+  registration_id: string;
+  status: string;
+  registered_at: string;
+  event: AlmanacEvent;
+};
+
+export async function getUserRegistrations(
+  userEmail: string
+): Promise<UserRegistrationItem[]> {
+  const rows = await prisma.registration.findMany({
+    where: { user_email: userEmail.toLowerCase() },
+    include: { event: true },
+    orderBy: { created_date: "desc" },
+  });
+
+  return rows.map((r) => ({
+    registration_id: r.id,
+    status: r.status,
+    registered_at: r.created_date.toISOString(),
+    event: serializeEvent(r.event),
+  }));
+}
+
 export async function getActiveAlmanac(): Promise<SerializedAlmanac | null> {
   const almanac = await prisma.almanacPdf.findFirst({
     where: { is_active: true },

@@ -167,3 +167,22 @@ model Feedback {
   @@index([rating])
   @@map("feedbacks")
 }
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  created_date DateTime @default(now())
+
+  actor_email String
+  actor_role  String?
+  action      String
+  entity_type String
+  entity_id   String?
+  summary     String
+  metadata    Json?
+
+  @@index([created_date])
+  @@index([actor_email])
+  @@index([entity_type, entity_id])
+  @@index([action])
+  @@map("audit_logs")
+}

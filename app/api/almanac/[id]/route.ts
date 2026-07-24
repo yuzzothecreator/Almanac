@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { apiError } from "@/lib/api";
+import { writeAuditLog } from "@/lib/audit";
 import { assertRole, requireUserFromRequest } from "@/lib/auth";
 import { deleteAlmanac, setActiveAlmanac } from "@/lib/data";
 
@@ -15,6 +16,15 @@ export async function DELETE(request: Request, { params }: Params) {
     if (!ok) {
       return NextResponse.json({ message: "Almanac not found." }, { status: 404 });
     }
+
+    await writeAuditLog({
+      actorEmail: user.email,
+      actorRole: user.role,
+      action: "almanac.delete",
+      entityType: "almanac",
+      entityId: id,
+      summary: `Deleted almanac ${id}`,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -37,6 +47,15 @@ export async function PATCH(request: Request, { params }: Params) {
     if (!updated) {
       return NextResponse.json({ message: "Almanac not found." }, { status: 404 });
     }
+
+    await writeAuditLog({
+      actorEmail: user.email,
+      actorRole: user.role,
+      action: "almanac.set_active",
+      entityType: "almanac",
+      entityId: updated.id,
+      summary: `Set active almanac “${updated.title}”`,
+    });
 
     return NextResponse.json(updated);
   } catch (error) {

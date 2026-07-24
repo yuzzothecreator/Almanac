@@ -1,7 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
-import { ArrowLeft, Calendar, Clock, MapPin, User } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar,
+  CalendarPlus,
+  Clock,
+  MapPin,
+  User,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -21,11 +28,18 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <Button asChild variant="ghost" size="sm" className="gap-2 -ml-2">
-        <Link href="/events">
-          <ArrowLeft className="w-4 h-4" /> Back to events
-        </Link>
-      </Button>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <Button asChild variant="ghost" size="sm" className="gap-2 -ml-2">
+          <Link href="/events">
+            <ArrowLeft className="w-4 h-4" /> Back to events
+          </Link>
+        </Button>
+        <Button asChild variant="outline" size="sm" className="gap-1.5">
+          <a href={`/api/events/${event.id}/ics`}>
+            <CalendarPlus className="w-4 h-4" /> Add to calendar
+          </a>
+        </Button>
+      </div>
 
       <Card className="p-4 sm:p-6 md:p-8 space-y-6">
         <div className="flex flex-wrap gap-2">

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { apiError } from "@/lib/api";
+import { writeAuditLog } from "@/lib/audit";
 import { assertRole, requireUserFromRequest } from "@/lib/auth";
 import { uploadAlmanac } from "@/lib/data";
 
@@ -25,6 +26,16 @@ export async function POST(request: Request) {
       file_data: body.file_data || "",
       uploaded_by: user.email,
       is_active: body.is_active !== false,
+    });
+
+    await writeAuditLog({
+      actorEmail: user.email,
+      actorRole: user.role,
+      action: "almanac.upload",
+      entityType: "almanac",
+      entityId: created.id,
+      summary: `Uploaded almanac “${created.title}” (${created.year})`,
+      metadata: { year: created.year, file_name: created.file_name },
     });
 
     return NextResponse.json(created, { status: 201 });

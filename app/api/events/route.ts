@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { apiError } from "@/lib/api";
+import { writeAuditLog } from "@/lib/audit";
 import {
   assertRole,
   canManageEvents,
@@ -45,6 +46,16 @@ export async function POST(request: Request) {
       tags: Array.isArray(body.tags) ? (body.tags as string[]) : [],
       is_featured: Boolean(body.is_featured),
       created_by: user.email,
+    });
+
+    await writeAuditLog({
+      actorEmail: user.email,
+      actorRole: user.role,
+      action: "event.create",
+      entityType: "event",
+      entityId: event.id,
+      summary: `Created event “${event.title}” (${event.status})`,
+      metadata: { status: event.status, category: event.category },
     });
 
     return NextResponse.json(event, { status: 201 });

@@ -11,10 +11,12 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
+  ClipboardList,
   LayoutDashboard,
   Bell,
   LogOut,
   Menu,
+  ScrollText,
   Settings,
   Users,
   X,
@@ -27,6 +29,7 @@ const studentNav = [
   { path: "/", icon: LayoutDashboard, label: "Dashboard" },
   { path: "/calendar", icon: Calendar, label: "Calendar" },
   { path: "/events", icon: BookOpen, label: "Events" },
+  { path: "/registrations", icon: ClipboardList, label: "My Registrations" },
   { path: "/bookmarks", icon: Bookmark, label: "Bookmarks" },
   { path: "/notifications", icon: Bell, label: "Notifications" },
 ];
@@ -40,9 +43,11 @@ const adminNav = [
   { path: "/", icon: LayoutDashboard, label: "Dashboard" },
   { path: "/calendar", icon: Calendar, label: "Calendar" },
   { path: "/events", icon: BookOpen, label: "Events" },
+  { path: "/registrations", icon: ClipboardList, label: "My Registrations" },
   { path: "/admin", icon: Settings, label: "Admin Panel" },
   { path: "/admin/analytics", icon: BarChart3, label: "Analytics" },
   { path: "/admin/users", icon: Users, label: "Users" },
+  { path: "/admin/audit", icon: ScrollText, label: "Audit Log" },
   { path: "/notifications", icon: Bell, label: "Notifications" },
 ];
 
