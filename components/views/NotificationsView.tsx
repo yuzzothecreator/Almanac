@@ -8,6 +8,7 @@ import {
   Calendar,
   Check,
   CheckCheck,
+  ChevronRight,
   Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -29,7 +30,7 @@ const typeConfig: Record<
 };
 
 export default function NotificationsView() {
-  const { notifications, unreadCount, loading, markRead, markAllRead } =
+  const { notifications, unreadCount, loading, markAllRead, openNotification } =
     useNotifications();
 
   return (
@@ -66,6 +67,8 @@ export default function NotificationsView() {
           {notifications.map((notif, i) => {
             const config = typeConfig[notif.type] || typeConfig.system;
             const Icon = config.icon;
+            const hasEvent = Boolean(notif.event_id);
+
             return (
               <motion.div
                 key={notif.id}
@@ -74,11 +77,17 @@ export default function NotificationsView() {
                 transition={{ delay: i * 0.03 }}
               >
                 <Card
+                  role="button"
+                  tabIndex={0}
                   className={`p-4 flex items-start gap-3 transition-colors cursor-pointer hover:bg-accent/50 ${
                     !notif.is_read ? "bg-primary/5 border-primary/20" : ""
                   }`}
-                  onClick={() => {
-                    if (!notif.is_read) void markRead(notif.id);
+                  onClick={() => void openNotification(notif)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      void openNotification(notif);
+                    }
                   }}
                 >
                   <div className={`p-2 rounded-lg bg-muted ${config.color}`}>
@@ -94,9 +103,16 @@ export default function NotificationsView() {
                     <p className="text-xs text-muted-foreground line-clamp-2">
                       {notif.message}
                     </p>
-                    <p className="text-[10px] text-muted-foreground mt-1">
-                      {format(new Date(notif.created_date), "MMM d, h:mm a")}
-                    </p>
+                    <div className="flex items-center justify-between gap-2 mt-1">
+                      <p className="text-[10px] text-muted-foreground">
+                        {format(new Date(notif.created_date), "MMM d, h:mm a")}
+                      </p>
+                      {hasEvent && (
+                        <span className="text-[10px] text-primary font-medium inline-flex items-center gap-0.5">
+                          View event <ChevronRight className="w-3 h-3" />
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </Card>
               </motion.div>
@@ -110,7 +126,7 @@ export default function NotificationsView() {
             {loading ? "Looking for notifications…" : "No notifications yet"}
           </p>
           <p className="text-sm mt-1">
-            Upcoming event reminders and cancellations will appear here
+            Upcoming event reminders and start alerts will appear here
           </p>
         </div>
       )}
