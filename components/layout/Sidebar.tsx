@@ -16,7 +16,7 @@ import {
   Menu,
   X,
 } from "lucide-react";
-import { mockUser } from "@/data/mock";
+import type { MockUser } from "@/lib/types";
 
 const navItems = [
   { path: "/", icon: LayoutDashboard, label: "Dashboard" },
@@ -26,7 +26,11 @@ const navItems = [
   { path: "/notifications", icon: Bell, label: "Notifications" },
 ];
 
-export default function Sidebar() {
+interface SidebarProps {
+  user: MockUser;
+}
+
+export default function Sidebar({ user }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
@@ -90,9 +94,9 @@ export default function Sidebar() {
         {!collapsed && (
           <div className="px-3 py-2">
             <p className="text-xs text-sidebar-foreground/80 font-medium truncate">
-              {mockUser.full_name}
+              {user.full_name}
             </p>
-            <p className="text-[10px] text-sidebar-foreground/40 capitalize">{mockUser.role}</p>
+            <p className="text-[10px] text-sidebar-foreground/40 capitalize">{user.role}</p>
           </div>
         )}
         <button

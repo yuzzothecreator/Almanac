@@ -1,9 +1,29 @@
 import { CalendarDays, Download, Eye, FileText } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { mockAlmanac } from "@/data/mock";
+import type { SerializedAlmanac } from "@/lib/serializers";
 
-export default function AlmanacDisplayCard() {
+interface AlmanacDisplayCardProps {
+  almanac: SerializedAlmanac | null;
+}
+
+export default function AlmanacDisplayCard({ almanac }: AlmanacDisplayCardProps) {
+  if (!almanac) {
+    return (
+      <Card className="overflow-hidden border border-dashed">
+        <CardContent className="p-6 sm:p-8">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted text-muted-foreground text-xs font-semibold mb-4 uppercase tracking-widest">
+            <CalendarDays className="w-3.5 h-3.5" /> Official Calendar
+          </div>
+          <h3 className="text-xl font-bold mb-2">No active almanac yet</h3>
+          <p className="text-muted-foreground max-w-md">
+            Upload an official academic calendar PDF from the admin panel to show it here.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="overflow-hidden border-0 bg-gradient-to-br from-primary/10 via-primary/5 to-background shadow-sm ring-1 ring-primary/20">
       <CardContent className="p-0">
@@ -13,9 +33,12 @@ export default function AlmanacDisplayCard() {
               <CalendarDays className="w-3.5 h-3.5" /> Official Calendar
             </div>
             <h3 className="text-xl sm:text-2xl font-bold mb-2 text-foreground">
-              {mockAlmanac.title}
+              {almanac.title}
             </h3>
-            <p className="text-muted-foreground mb-6 max-w-md">{mockAlmanac.description}</p>
+            <p className="text-muted-foreground mb-6 max-w-md">
+              {almanac.description ||
+                `The complete academic calendar for the ${almanac.year} year.`}
+            </p>
             <div className="flex flex-wrap items-center gap-3">
               <Button className="gap-2 shadow-md">
                 <Eye className="w-4 h-4" /> View Almanac

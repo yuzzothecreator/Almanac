@@ -1,0 +1,169 @@
+// Prisma schema — University Events Almanac
+// https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../prisma/generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Event {
+  id           String   @id @default(cuid())
+  created_date DateTime @default(now())
+  updated_date DateTime @updatedAt
+  created_by   String?
+
+  title        String
+  description  String?
+  date         DateTime @db.Date
+  end_date     DateTime? @db.Date
+  start_time   String?
+  end_time     String?
+  venue        String?
+  organizer    String?
+  department   String?
+  category     String   @default("academic")
+  status       String   @default("draft")
+  priority     String   @default("medium")
+  banner_url   String?
+  max_capacity Int?
+  tags         String[] @default([])
+  is_featured  Boolean  @default(false)
+
+  registrations Registration[]
+  notifications Notification[]
+  bookmarks     Bookmark[]
+  feedbacks     Feedback[]
+
+  @@index([date])
+  @@index([category])
+  @@index([status])
+  @@map("events")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  created_date  DateTime  @default(now())
+  updated_date  DateTime  @updatedAt
+  email         String    @unique
+  full_name     String?
+  password_hash String
+  role          String    @default("student")
+  is_verified   Boolean   @default(false)
+  disabled      Boolean   @default(false)
+  last_login_at DateTime?
+
+  @@index([role])
+  @@index([is_verified])
+  @@map("users")
+}
+
+model AlmanacPdf {
+  id           String   @id @default(cuid())
+  created_date DateTime @default(now())
+  updated_date DateTime @updatedAt
+
+  title       String
+  description String?
+  year        String
+  file_data   Bytes
+  file_name   String
+  file_size   Int
+  uploaded_by String
+  is_active   Boolean @default(true)
+
+  @@index([year])
+  @@index([is_active])
+  @@map("almanac_pdfs")
+}
+
+model AuthOtp {
+  id           String    @id @default(cuid())
+  created_date DateTime  @default(now())
+  updated_date DateTime  @updatedAt
+  email        String
+  code_hash    String
+  purpose      String
+  expires_at   DateTime
+  consumed_at  DateTime?
+  attempts     Int       @default(0)
+
+  @@index([email, purpose, consumed_at])
+  @@index([expires_at])
+  @@map("auth_otps")
+}
+
+model Registration {
+  id           String   @id @default(cuid())
+  created_date DateTime @default(now())
+  updated_date DateTime @updatedAt
+
+  event_id   String
+  user_email String
+  user_name  String?
+  status     String  @default("registered")
+
+  event Event @relation(fields: [event_id], references: [id], onDelete: Cascade)
+
+  @@unique([event_id, user_email])
+  @@index([user_email])
+  @@index([status])
+  @@map("registrations")
+}
+
+model Notification {
+  id           String   @id @default(cuid())
+  created_date DateTime @default(now())
+  updated_date DateTime @updatedAt
+
+  event_id   String?
+  user_email String
+  title      String
+  message    String
+  type       String  @default("system")
+  is_read    Boolean @default(false)
+
+  event Event? @relation(fields: [event_id], references: [id], onDelete: SetNull)
+
+  @@index([user_email, is_read])
+  @@index([created_date])
+  @@index([type])
+  @@map("notifications")
+}
+
+model Bookmark {
+  id           String   @id @default(cuid())
+  created_date DateTime @default(now())
+  updated_date DateTime @updatedAt
+
+  event_id   String
+  user_email String
+
+  event Event @relation(fields: [event_id], references: [id], onDelete: Cascade)
+
+  @@unique([event_id, user_email])
+  @@index([user_email])
+  @@map("bookmarks")
+}
+
+model Feedback {
+  id           String   @id @default(cuid())
+  created_date DateTime @default(now())
+  updated_date DateTime @updatedAt
+
+  event_id   String
+  user_email String
+  user_name  String?
+  rating     Int
+  comment    String?
+
+  event Event @relation(fields: [event_id], references: [id], onDelete: Cascade)
+
+  @@unique([event_id, user_email])
+  @@index([event_id])
+  @@index([rating])
+  @@map("feedbacks")
+}

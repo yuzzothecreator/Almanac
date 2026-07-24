@@ -5,7 +5,9 @@ import { ArrowLeft, Calendar, Clock, MapPin, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { mockEvents } from "@/data/mock";
+import { getEventById } from "@/lib/data";
+
+export const dynamic = "force-dynamic";
 
 interface EventDetailPageProps {
   params: Promise<{ id: string }>;
@@ -13,7 +15,7 @@ interface EventDetailPageProps {
 
 export default async function EventDetailPage({ params }: EventDetailPageProps) {
   const { id } = await params;
-  const event = mockEvents.find((e) => e.id === id);
+  const event = await getEventById(id);
   if (!event) notFound();
 
   return (
@@ -40,7 +42,9 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
         <div>
           <h1 className="text-3xl font-bold tracking-tight mb-3">{event.title}</h1>
           {event.description && (
-            <p className="text-muted-foreground text-base leading-relaxed">{event.description}</p>
+            <p className="text-muted-foreground text-base leading-relaxed">
+              {event.description}
+            </p>
           )}
         </div>
 

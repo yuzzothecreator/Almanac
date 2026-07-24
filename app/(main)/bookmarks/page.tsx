@@ -1,9 +1,12 @@
 import { Bookmark } from "lucide-react";
 import EventCard from "@/components/events/EventCard";
-import { mockEvents } from "@/data/mock";
+import { getBookmarkedEvents, getDemoUser } from "@/lib/data";
 
-export default function BookmarksPage() {
-  const bookmarked = mockEvents.filter((e) => e.is_featured && e.status === "published");
+export const dynamic = "force-dynamic";
+
+export default async function BookmarksPage() {
+  const user = await getDemoUser();
+  const bookmarked = await getBookmarkedEvents(user.email);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">

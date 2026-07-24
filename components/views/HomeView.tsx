@@ -17,17 +17,30 @@ import StatsCard from "@/components/dashboard/StatsCard";
 import CalendarGrid from "@/components/calendar/CalendarGrid";
 import EventCard from "@/components/events/EventCard";
 import { Button } from "@/components/ui/button";
-import { mockEvents, mockUser } from "@/data/mock";
+import type { AlmanacEvent, MockUser } from "@/lib/types";
+import type { SerializedAlmanac } from "@/lib/serializers";
 
-export default function HomeView() {
+interface HomeViewProps {
+  events: AlmanacEvent[];
+  user: MockUser;
+  registrationCount: number;
+  almanac: SerializedAlmanac | null;
+}
+
+export default function HomeView({
+  events,
+  user,
+  registrationCount,
+  almanac,
+}: HomeViewProps) {
   const router = useRouter();
   const today = startOfToday();
 
-  const publishedEvents = mockEvents.filter((e) => e.status === "published");
+  const publishedEvents = events.filter((e) => e.status === "published");
   const upcomingEvents = publishedEvents.filter(
     (e) => e.date && isAfter(new Date(e.date), today)
   );
-  const cancelledEvents = mockEvents.filter((e) => e.status === "cancelled");
+  const cancelledEvents = events.filter((e) => e.status === "cancelled");
   const featuredEvents = upcomingEvents.filter((e) => e.is_featured).slice(0, 3);
   const nextEvents = upcomingEvents.slice(0, 6);
 
@@ -44,9 +57,7 @@ export default function HomeView() {
           </p>
           <h1 className="text-3xl md:text-4xl font-bold text-foreground">
             Welcome back,{" "}
-            <span className="text-gradient">
-              {mockUser.full_name.split(" ")[0]}
-            </span>
+            <span className="text-gradient">{user.full_name.split(" ")[0]}</span>
           </h1>
           <p className="text-muted-foreground mt-1">
             {upcomingEvents.length} upcoming events on your campus
@@ -67,15 +78,39 @@ export default function HomeView() {
       </motion.div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatsCard title="Total Events" value={mockEvents.length} icon={BookOpen} color="primary" index={0} />
-        <StatsCard title="Upcoming" value={upcomingEvents.length} icon={Clock} color="blue" index={1} />
-        <StatsCard title="Registrations" value={24} icon={Users} color="green" index={2} />
-        <StatsCard title="Cancelled" value={cancelledEvents.length} icon={AlertTriangle} color="red" index={3} />
+        <StatsCard
+          title="Total Events"
+          value={events.length}
+          icon={BookOpen}
+          color="primary"
+          index={0}
+        />
+        <StatsCard
+          title="Upcoming"
+          value={upcomingEvents.length}
+          icon={Clock}
+          color="blue"
+          index={1}
+        />
+        <StatsCard
+          title="Registrations"
+          value={registrationCount}
+          icon={Users}
+          color="green"
+          index={2}
+        />
+        <StatsCard
+          title="Cancelled"
+          value={cancelledEvents.length}
+          icon={AlertTriangle}
+          color="red"
+          index={3}
+        />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <AlmanacDisplayCard />
+          <AlmanacDisplayCard almanac={almanac} />
 
           {featuredEvents.length > 0 && (
             <section>
