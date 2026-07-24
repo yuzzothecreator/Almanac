@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/AuthContext";
 import { useNotifications } from "@/components/notifications/NotificationsProvider";
+import { useAuthedFetch } from "@/lib/useAuthedFetch";
 import type { AlmanacEvent } from "@/lib/types";
 
 interface EventRegisterSectionProps {
@@ -15,6 +16,7 @@ interface EventRegisterSectionProps {
 
 export default function EventRegisterSection({ event }: EventRegisterSectionProps) {
   const { user } = useAuth();
+  const authedFetch = useAuthedFetch();
   const { refresh } = useNotifications();
   const [count, setCount] = useState(0);
   const [registered, setRegistered] = useState(false);
@@ -35,8 +37,9 @@ export default function EventRegisterSection({ event }: EventRegisterSectionProp
       setLoading(true);
       try {
         const params = new URLSearchParams({ eventId: event.id });
-        if (user?.email) params.set("email", user.email);
-        const res = await fetch(`/api/registrations?${params.toString()}`);
+        const res = user
+          ? await authedFetch(`/api/registrations?${params.toString()}`)
+          : await fetch(`/api/registrations?${params.toString()}`);
         if (!res.ok) return;
         const data = (await res.json()) as {
           count: number;
@@ -55,24 +58,19 @@ export default function EventRegisterSection({ event }: EventRegisterSectionProp
     return () => {
       cancelled = true;
     };
-  }, [event.id, user?.email]);
+  }, [event.id, user, authedFetch]);
 
   const handleRegister = async () => {
-    if (!user?.email) {
+    if (!user) {
       toast.error("Please sign in to register.");
       return;
     }
 
     setSubmitting(true);
     try {
-      const res = await fetch("/api/registrations", {
+      const res = await authedFetch("/api/registrations", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          eventId: event.id,
-          email: user.email,
-          fullName: user.full_name,
-        }),
+        body: JSON.stringify({ eventId: event.id }),
       });
 
       const data = (await res.json().catch(() => ({}))) as {
@@ -99,17 +97,13 @@ export default function EventRegisterSection({ event }: EventRegisterSectionProp
   };
 
   const handleCancel = async () => {
-    if (!user?.email) return;
+    if (!user) return;
 
     setSubmitting(true);
     try {
-      const res = await fetch("/api/registrations", {
+      const res = await authedFetch("/api/registrations", {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          eventId: event.id,
-          email: user.email,
-        }),
+        body: JSON.stringify({ eventId: event.id }),
       });
 
       if (!res.ok) {

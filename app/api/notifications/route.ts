@@ -1,26 +1,22 @@
 import { NextResponse } from "next/server";
+import { apiError } from "@/lib/api";
+import { requireUserFromRequest } from "@/lib/auth";
 import {
   detectAndCreateNotifications,
   getNotifications,
 } from "@/lib/data";
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const email = searchParams.get("email");
-  const detect = searchParams.get("detect") === "1";
-
-  if (!email) {
-    return NextResponse.json({ message: "email is required" }, { status: 400 });
-  }
-
   try {
+    const user = await requireUserFromRequest(request);
+    const detect = new URL(request.url).searchParams.get("detect") === "1";
+
     const notifications = detect
-      ? await detectAndCreateNotifications(email)
-      : await getNotifications(email);
+      ? await detectAndCreateNotifications(user.email)
+      : await getNotifications(user.email);
 
     return NextResponse.json(notifications);
   } catch (error) {
-    console.error("notifications GET failed:", error);
-    return NextResponse.json({ message: "Failed to load notifications." }, { status: 500 });
+    return apiError(error, "Failed to load notifications.");
   }
 }

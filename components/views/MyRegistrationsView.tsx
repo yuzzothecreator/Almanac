@@ -55,10 +55,9 @@ export default function MyRegistrationsView() {
     if (!confirm("Cancel this registration?")) return;
     setBusyId(eventId);
     try {
-      const res = await fetch("/api/registrations", {
+      const res = await authedFetch("/api/registrations", {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ eventId, email: user.email }),
+        body: JSON.stringify({ eventId }),
       });
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { message?: string };

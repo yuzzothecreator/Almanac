@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import { Bookmark } from "lucide-react";
 import EventCard from "@/components/events/EventCard";
 import { useAuth } from "@/lib/AuthContext";
+import { useAuthedFetch } from "@/lib/useAuthedFetch";
 import type { AlmanacEvent } from "@/lib/types";
 
 export default function BookmarksPage() {
   const { user, isLoadingAuth } = useAuth();
+  const authedFetch = useAuthedFetch();
   const [bookmarked, setBookmarked] = useState<AlmanacEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -21,9 +23,7 @@ export default function BookmarksPage() {
     const load = async () => {
       setLoading(true);
       try {
-        const res = await fetch(
-          `/api/bookmarks?email=${encodeURIComponent(user.email)}`
-        );
+        const res = await authedFetch("/api/bookmarks");
         if (res.ok) {
           const data = (await res.json()) as AlmanacEvent[];
           if (!cancelled) setBookmarked(data);
@@ -36,7 +36,7 @@ export default function BookmarksPage() {
     return () => {
       cancelled = true;
     };
-  }, [user?.email, isLoadingAuth]);
+  }, [user?.email, isLoadingAuth, authedFetch]);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">

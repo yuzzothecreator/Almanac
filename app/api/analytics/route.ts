@@ -1,15 +1,19 @@
 import { NextResponse } from "next/server";
+import { apiError } from "@/lib/api";
+import { assertRole, requireUserFromRequest } from "@/lib/auth";
 import { getEvents, getRegistrations } from "@/lib/data";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const user = await requireUserFromRequest(request);
+    assertRole(user, ["admin", "super_admin"]);
+
     const [events, registrations] = await Promise.all([
       getEvents(),
       getRegistrations(),
     ]);
     return NextResponse.json({ events, registrations });
   } catch (error) {
-    console.error("analytics api failed:", error);
-    return NextResponse.json({ message: "Failed to load analytics." }, { status: 500 });
+    return apiError(error, "Failed to load analytics.");
   }
 }

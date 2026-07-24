@@ -1,4 +1,11 @@
 import { NextResponse } from "next/server";
+import { apiError } from "@/lib/api";
+import {
+  requireUserFromRequest,
+  getBearerToken,
+  syncUserFromClerkToken,
+  type AppUser,
+} from "@/lib/auth";
 import {
   cancelEventRegistration,
   getEventRegistrationCount,
@@ -6,87 +13,90 @@ import {
   registerForEvent,
 } from "@/lib/data";
 
+async function optionalUserFromRequest(request: Request): Promise<AppUser | null> {
+  const token = getBearerToken(request);
+  if (!token) return null;
+  try {
+    return await syncUserFromClerkToken(token);
+  } catch {
+    return null;
+  }
+}
+
+/** Public count; personal registered status only for the authenticated user. */
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const eventId = searchParams.get("eventId");
-  const email = searchParams.get("email");
 
   if (!eventId) {
     return NextResponse.json({ message: "eventId is required" }, { status: 400 });
   }
 
   try {
+    const user = await optionalUserFromRequest(request);
     const [count, registration] = await Promise.all([
       getEventRegistrationCount(eventId),
-      email ? getUserEventRegistration(eventId, email) : Promise.resolve(null),
+      user
+        ? getUserEventRegistration(eventId, user.email)
+        : Promise.resolve(null),
     ]);
 
     return NextResponse.json({
       count,
       registered: Boolean(registration),
-      registration,
+      registration: registration
+        ? {
+            id: registration.id,
+            event_id: registration.event_id,
+            status: registration.status,
+          }
+        : null,
     });
   } catch (error) {
-    console.error("registrations GET failed:", error);
-    return NextResponse.json({ message: "Failed to load registration." }, { status: 500 });
+    return apiError(error, "Failed to load registration.");
   }
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json().catch(() => ({}))) as {
-    eventId?: string;
-    email?: string;
-    fullName?: string | null;
-  };
-
-  if (!body.eventId || !body.email) {
-    return NextResponse.json(
-      { message: "eventId and email are required." },
-      { status: 400 }
-    );
-  }
-
   try {
+    const user = await requireUserFromRequest(request);
+    const body = (await request.json().catch(() => ({}))) as {
+      eventId?: string;
+    };
+
+    if (!body.eventId) {
+      return NextResponse.json({ message: "eventId is required." }, { status: 400 });
+    }
+
     const result = await registerForEvent({
       eventId: body.eventId,
-      userEmail: body.email.toLowerCase(),
-      userName: body.fullName,
+      userEmail: user.email,
+      userName: user.full_name,
     });
 
     return NextResponse.json(result, { status: result.created ? 201 : 200 });
   } catch (error) {
-    const err = error as Error & { statusCode?: number };
-    return NextResponse.json(
-      { message: err.message || "Registration failed." },
-      { status: err.statusCode || 500 }
-    );
+    return apiError(error, "Registration failed.");
   }
 }
 
 export async function DELETE(request: Request) {
-  const body = (await request.json().catch(() => ({}))) as {
-    eventId?: string;
-    email?: string;
-  };
-
-  if (!body.eventId || !body.email) {
-    return NextResponse.json(
-      { message: "eventId and email are required." },
-      { status: 400 }
-    );
-  }
-
   try {
-    const removed = await cancelEventRegistration(
-      body.eventId,
-      body.email.toLowerCase()
-    );
+    const user = await requireUserFromRequest(request);
+    const body = (await request.json().catch(() => ({}))) as {
+      eventId?: string;
+    };
+
+    if (!body.eventId) {
+      return NextResponse.json({ message: "eventId is required." }, { status: 400 });
+    }
+
+    const removed = await cancelEventRegistration(body.eventId, user.email);
     if (!removed) {
       return NextResponse.json({ message: "Registration not found." }, { status: 404 });
     }
     return NextResponse.json({ ok: true });
   } catch (error) {
-    console.error("registrations DELETE failed:", error);
-    return NextResponse.json({ message: "Failed to cancel registration." }, { status: 500 });
+    return apiError(error, "Failed to cancel registration.");
   }
 }

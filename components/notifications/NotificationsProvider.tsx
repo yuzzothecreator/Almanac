@@ -13,6 +13,7 @@ import {
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
+import { useAuthedFetch } from "@/lib/useAuthedFetch";
 import { playNotificationSound } from "@/lib/notification-sound";
 import type { SerializedNotification } from "@/lib/serializers";
 import type { AlmanacEvent } from "@/lib/types";
@@ -61,16 +62,13 @@ function saveAlertedIds(ids: Set<string>) {
 export function NotificationsProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { user, isAuthenticated, isLoadingAuth } = useAuth();
+  const authedFetch = useAuthedFetch();
   const [notifications, setNotifications] = useState<SerializedNotification[]>([]);
   const [loading, setLoading] = useState(false);
   const knownIdsRef = useRef<Set<string>>(new Set());
   const primedRef = useRef(false);
-  const alertedStartsRef = useRef<Set<string>>(new Set());
+  const alertedStartsRef = useRef<Set<string>>(loadAlertedIds());
   const eventsCacheRef = useRef<AlmanacEvent[]>([]);
-
-  useEffect(() => {
-    alertedStartsRef.current = loadAlertedIds();
-  }, []);
 
   // Browsers require a user gesture before AudioContext can play sound
   useEffect(() => {
@@ -125,20 +123,17 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         setNotifications((prev) =>
           prev.map((n) => (n.id === notification.id ? { ...n, is_read: true } : n))
         );
-        if (user?.email) {
-          void fetch(`/api/notifications/${notification.id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: user.email, is_read: true }),
-          });
-        }
+        void authedFetch(`/api/notifications/${notification.id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ is_read: true }),
+        });
       }
 
       if (notification.event_id) {
         router.push(`/events/${notification.event_id}`);
       }
     },
-    [router, user?.email]
+    [router, authedFetch]
   );
 
   const refresh = useCallback(
@@ -148,10 +143,8 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       if (!opts?.silent) setLoading(true);
       try {
         const detect = opts?.detect ?? true;
-        const res = await fetch(
-          `/api/notifications?email=${encodeURIComponent(user.email)}&detect=${
-            detect ? "1" : "0"
-          }`
+        const res = await authedFetch(
+          `/api/notifications?detect=${detect ? "1" : "0"}`
         );
         if (!res.ok) return;
 
@@ -182,7 +175,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         if (!opts?.silent) setLoading(false);
       }
     },
-    [user?.email, showPopup]
+    [user?.email, showPopup, authedFetch]
   );
 
   const checkEventStarts = useCallback(async () => {
@@ -268,13 +261,12 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
       );
 
-      await fetch(`/api/notifications/${id}`, {
+      await authedFetch(`/api/notifications/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: user.email, is_read: true }),
+        body: JSON.stringify({ is_read: true }),
       });
     },
-    [user?.email]
+    [user?.email, authedFetch]
   );
 
   const markAllRead = useCallback(async () => {
@@ -282,12 +274,11 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
 
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
 
-    await fetch("/api/notifications/mark-all-read", {
+    await authedFetch("/api/notifications/mark-all-read", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: user.email }),
+      body: JSON.stringify({}),
     });
-  }, [user?.email]);
+  }, [user?.email, authedFetch]);
 
   const unreadCount = useMemo(
     () => notifications.filter((n) => !n.is_read).length,

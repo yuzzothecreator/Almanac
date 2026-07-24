@@ -32,6 +32,7 @@ import StatsCard from "@/components/dashboard/StatsCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { SerializedRegistration } from "@/lib/data";
 import type { AlmanacEvent } from "@/lib/types";
+import { useAuthedFetch } from "@/lib/useAuthedFetch";
 
 const COLORS = [
   "#7c3aed",
@@ -66,6 +67,7 @@ const SEMESTERS = [
 ];
 
 export default function AdminAnalyticsView() {
+  const authedFetch = useAuthedFetch();
   const [events, setEvents] = useState<AlmanacEvent[]>([]);
   const [registrations, setRegistrations] = useState<SerializedRegistration[]>([]);
   const [loading, setLoading] = useState(true);
@@ -85,7 +87,7 @@ export default function AdminAnalyticsView() {
     const load = async () => {
       setLoading(true);
       try {
-        const res = await fetch("/api/analytics");
+        const res = await authedFetch("/api/analytics");
         if (!res.ok) return;
         const data = (await res.json()) as {
           events: AlmanacEvent[];
@@ -103,7 +105,7 @@ export default function AdminAnalyticsView() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [authedFetch]);
 
   const semesterEvents = useMemo(() => {
     if (selectedSemester === "all") return events;
