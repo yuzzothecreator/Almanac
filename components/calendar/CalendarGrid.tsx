@@ -33,6 +33,9 @@ const categoryDots: Record<EventCategory, string> = {
   emergency: "bg-red-600",
 };
 
+const weekDaysFull = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const weekDaysShort = ["M", "T", "W", "T", "F", "S", "S"];
+
 interface CalendarGridProps {
   events?: AlmanacEvent[];
   onDateClick?: (date: Date) => void;
@@ -66,13 +69,13 @@ export default function CalendarGrid({
     return map;
   }, [events]);
 
-  const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
   return (
-    <Card className={compact ? "p-4" : "p-4 md:p-6"}>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-xl font-bold">{format(currentMonth, "MMMM yyyy")}</h2>
+    <Card className={compact ? "p-3 sm:p-4" : "p-3 sm:p-4 md:p-6"}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6">
+        <div className="min-w-0">
+          <h2 className="text-lg sm:text-xl font-bold truncate">
+            {format(currentMonth, "MMMM yyyy")}
+          </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
             {
               events.filter(
@@ -82,11 +85,11 @@ export default function CalendarGrid({
             events this month
           </p>
         </div>
-        <div className="flex gap-1">
+        <div className="flex gap-1 self-start sm:self-auto">
           <Button
             variant="outline"
             size="icon"
-            className="h-8 w-8"
+            className="h-9 w-9 min-h-9 min-w-9"
             onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
           >
             <ChevronLeft className="w-4 h-4" />
@@ -94,7 +97,7 @@ export default function CalendarGrid({
           <Button
             variant="outline"
             size="sm"
-            className="h-8 text-xs"
+            className="h-9 min-h-9 text-xs px-3"
             onClick={() => setCurrentMonth(new Date())}
           >
             Today
@@ -102,7 +105,7 @@ export default function CalendarGrid({
           <Button
             variant="outline"
             size="icon"
-            className="h-8 w-8"
+            className="h-9 w-9 min-h-9 min-w-9"
             onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
           >
             <ChevronRight className="w-4 h-4" />
@@ -110,10 +113,14 @@ export default function CalendarGrid({
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-px">
-        {weekDays.map((d) => (
-          <div key={d} className="text-center text-xs font-medium text-muted-foreground py-2">
-            {d}
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-px">
+        {weekDaysFull.map((d, idx) => (
+          <div
+            key={`${d}-${idx}`}
+            className="text-center text-[10px] sm:text-xs font-medium text-muted-foreground py-1.5 sm:py-2"
+          >
+            <span className="sm:hidden">{weekDaysShort[idx]}</span>
+            <span className="hidden sm:inline">{d}</span>
           </div>
         ))}
         <AnimatePresence mode="wait">
@@ -132,35 +139,41 @@ export default function CalendarGrid({
                 animate={{ opacity: 1 }}
                 transition={{ delay: i * 0.005 }}
                 onClick={() => onDateClick?.(day)}
-                className={`relative p-1.5 ${
-                  compact ? "min-h-[48px]" : "min-h-[60px] md:min-h-[80px]"
+                className={`relative p-1 sm:p-1.5 min-w-0 ${
+                  compact
+                    ? "min-h-[44px] sm:min-h-[48px]"
+                    : "min-h-[44px] sm:min-h-[60px] md:min-h-[80px]"
                 } text-left rounded-lg transition-all border border-transparent hover:border-primary/20 hover:bg-accent/50
                   ${!inMonth ? "opacity-30" : ""}
                   ${today ? "bg-primary/5 ring-1 ring-primary/30" : ""}
                   ${selected ? "bg-primary/10 ring-2 ring-primary" : ""}
                 `}
               >
-                <span className={`text-xs font-medium ${today ? "text-primary font-bold" : ""}`}>
+                <span
+                  className={`text-[11px] sm:text-xs font-medium ${
+                    today ? "text-primary font-bold" : ""
+                  }`}
+                >
                   {format(day, "d")}
                 </span>
                 {dayEvents.length > 0 && (
                   <div className="mt-1 space-y-0.5">
                     {dayEvents.slice(0, compact ? 1 : 2).map((ev) => (
-                      <div key={ev.id} className="flex items-center gap-1">
+                      <div key={ev.id} className="flex items-center gap-1 min-w-0">
                         <div
                           className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
                             categoryDots[ev.category] || "bg-primary"
                           }`}
                         />
                         {!compact && (
-                          <span className="text-[9px] truncate text-foreground/80 leading-tight">
+                          <span className="hidden md:inline text-[9px] truncate text-foreground/80 leading-tight">
                             {ev.title}
                           </span>
                         )}
                       </div>
                     ))}
                     {dayEvents.length > (compact ? 1 : 2) && (
-                      <span className="text-[9px] text-muted-foreground">
+                      <span className="hidden md:inline text-[9px] text-muted-foreground">
                         +{dayEvents.length - (compact ? 1 : 2)} more
                       </span>
                     )}

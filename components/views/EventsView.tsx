@@ -40,20 +40,20 @@ export default function EventsView({ events }: EventsViewProps) {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Events</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Events</h1>
+        <p className="text-muted-foreground mt-1 text-sm sm:text-base">
           {upcomingCount} upcoming · {filtered.length} total shown
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="-mx-1 px-1 flex gap-2 overflow-x-auto pb-1 scrollbar-thin sm:flex-wrap sm:overflow-visible">
         {categories.map((c) => (
           <Button
             key={c.value}
             size="sm"
             variant={category === c.value ? "default" : "outline"}
             onClick={() => setCategory(c.value)}
-            className="rounded-full"
+            className="rounded-full min-h-9 flex-shrink-0"
           >
             {c.label}
           </Button>

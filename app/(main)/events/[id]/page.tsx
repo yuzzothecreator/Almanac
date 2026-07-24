@@ -27,7 +27,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
         </Link>
       </Button>
 
-      <Card className="p-6 md:p-8 space-y-6">
+      <Card className="p-4 sm:p-6 md:p-8 space-y-6">
         <div className="flex flex-wrap gap-2">
           <Badge variant="outline" className="capitalize">
             {event.category.replace("_", " ")}
@@ -40,37 +40,43 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
           )}
         </div>
 
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight mb-3">{event.title}</h1>
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-3 break-words">
+            {event.title}
+          </h1>
           {event.description && (
-            <p className="text-muted-foreground text-base leading-relaxed">
+            <p className="text-muted-foreground text-sm sm:text-base leading-relaxed break-words">
               {event.description}
             </p>
           )}
         </div>
 
         <div className="grid sm:grid-cols-2 gap-3 text-sm">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Calendar className="w-4 h-4 text-primary" />
-            {format(new Date(event.date), "EEEE, MMMM d, yyyy")}
+          <div className="flex items-center gap-2 text-muted-foreground min-w-0">
+            <Calendar className="w-4 h-4 text-primary flex-shrink-0" />
+            <span className="break-words">
+              {format(new Date(event.date), "EEEE, MMMM d, yyyy")}
+            </span>
           </div>
           {event.start_time && (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Clock className="w-4 h-4 text-primary" />
-              {event.start_time}
-              {event.end_time ? ` – ${event.end_time}` : ""}
+            <div className="flex items-center gap-2 text-muted-foreground min-w-0">
+              <Clock className="w-4 h-4 text-primary flex-shrink-0" />
+              <span className="break-words">
+                {event.start_time}
+                {event.end_time ? ` – ${event.end_time}` : ""}
+              </span>
             </div>
           )}
           {event.venue && (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <MapPin className="w-4 h-4 text-primary" />
-              {event.venue}
+            <div className="flex items-center gap-2 text-muted-foreground min-w-0">
+              <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
+              <span className="break-words">{event.venue}</span>
             </div>
           )}
           {event.organizer && (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <User className="w-4 h-4 text-primary" />
-              {event.organizer}
+            <div className="flex items-center gap-2 text-muted-foreground min-w-0">
+              <User className="w-4 h-4 text-primary flex-shrink-0" />
+              <span className="break-words">{event.organizer}</span>
             </div>
           )}
         </div>

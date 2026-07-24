@@ -70,6 +70,15 @@ export default function AdminAnalyticsView() {
   const [registrations, setRegistrations] = useState<SerializedRegistration[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSemester, setSelectedSemester] = useState("all");
+  const [isNarrow, setIsNarrow] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const apply = () => setIsNarrow(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -114,16 +123,17 @@ export default function AdminAnalyticsView() {
   }, [registrations]);
 
   const attendanceData = useMemo(() => {
+    const maxLen = isNarrow ? 16 : 28;
     return semesterEvents
       .map((e) => ({
-        name: e.title.length > 28 ? `${e.title.slice(0, 28)}…` : e.title,
+        name: e.title.length > maxLen ? `${e.title.slice(0, maxLen)}…` : e.title,
         registrations: regsByEvent[e.id] || 0,
         category: e.category,
       }))
       .filter((e) => e.registrations > 0)
       .sort((a, b) => b.registrations - a.registrations)
       .slice(0, 10);
-  }, [semesterEvents, regsByEvent]);
+  }, [semesterEvents, regsByEvent, isNarrow]);
 
   const categoryData = useMemo(() => {
     const map: Record<string, { name: string; events: number; registrations: number }> = {};
@@ -212,12 +222,12 @@ export default function AdminAnalyticsView() {
             Event attendance, category popularity & semester engagement
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Semester:</span>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+          <span className="text-sm text-muted-foreground shrink-0">Semester:</span>
           <select
             value={selectedSemester}
             onChange={(e) => setSelectedSemester(e.target.value)}
-            className="h-9 w-48 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className="h-9 w-full sm:w-48 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           >
             <option value="all">All Semesters</option>
             {SEMESTERS.map((s, i) => (
@@ -229,7 +239,7 @@ export default function AdminAnalyticsView() {
         </div>
       </motion.div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
         <StatsCard
           title="Total Events"
           value={semesterEvents.length}
@@ -270,28 +280,34 @@ export default function AdminAnalyticsView() {
           </p>
         </CardHeader>
         <CardContent>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={semesterTrends} barGap={4}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="semester" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Legend />
-                <Bar
-                  dataKey="events"
-                  name="Events"
-                  fill="hsl(var(--primary))"
-                  radius={[4, 4, 0, 0]}
-                />
-                <Bar
-                  dataKey="registrations"
-                  name="Registrations"
-                  fill="#10b981"
-                  radius={[4, 4, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="h-64 min-w-0 overflow-x-auto">
+            <div className={isNarrow ? "min-w-[420px] h-64" : "h-64"}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={semesterTrends} barGap={4}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis
+                    dataKey="semester"
+                    tick={{ fontSize: isNarrow ? 10 : 11 }}
+                    interval={0}
+                  />
+                  <YAxis tick={{ fontSize: 11 }} width={isNarrow ? 32 : 40} />
+                  <Tooltip />
+                  <Legend />
+                  <Bar
+                    dataKey="events"
+                    name="Events"
+                    fill="hsl(var(--primary))"
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="registrations"
+                    name="Registrations"
+                    fill="#10b981"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -307,42 +323,44 @@ export default function AdminAnalyticsView() {
             </p>
           </CardHeader>
           <CardContent>
-            <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={monthlyEngagement}>
-                  <defs>
-                    <linearGradient id="eventsGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="regsGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="month" tick={{ fontSize: 10 }} />
-                  <YAxis tick={{ fontSize: 11 }} />
-                  <Tooltip />
-                  <Legend />
-                  <Area
-                    type="monotone"
-                    dataKey="events"
-                    name="Events"
-                    stroke="hsl(var(--primary))"
-                    fill="url(#eventsGrad)"
-                    strokeWidth={2}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="registrations"
-                    name="Registrations"
-                    stroke="#10b981"
-                    fill="url(#regsGrad)"
-                    strokeWidth={2}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+            <div className="h-56 min-w-0 overflow-x-auto">
+              <div className={isNarrow ? "min-w-[360px] h-56" : "h-56"}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={monthlyEngagement} margin={{ left: 0, right: 4 }}>
+                    <defs>
+                      <linearGradient id="eventsGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="regsGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="month" tick={{ fontSize: 10 }} />
+                    <YAxis tick={{ fontSize: 11 }} width={isNarrow ? 28 : 40} />
+                    <Tooltip />
+                    <Legend />
+                    <Area
+                      type="monotone"
+                      dataKey="events"
+                      name="Events"
+                      stroke="hsl(var(--primary))"
+                      fill="url(#eventsGrad)"
+                      strokeWidth={2}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="registrations"
+                      name="Registrations"
+                      stroke="#10b981"
+                      fill="url(#regsGrad)"
+                      strokeWidth={2}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -354,15 +372,15 @@ export default function AdminAnalyticsView() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-56">
+            <div className="h-56 min-w-0 overflow-hidden">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={regStatusData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={45}
-                    outerRadius={75}
+                    innerRadius={isNarrow ? 36 : 45}
+                    outerRadius={isNarrow ? 60 : 75}
                     dataKey="value"
                     paddingAngle={3}
                   >
@@ -398,12 +416,17 @@ export default function AdminAnalyticsView() {
             <p className="text-xs text-muted-foreground">By number of registrations</p>
           </CardHeader>
           <CardContent>
-            <div className="h-64">
+            <div className="h-64 min-w-0 overflow-hidden">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={categoryData} layout="vertical" margin={{ left: 8 }}>
+                <BarChart data={categoryData} layout="vertical" margin={{ left: 4, right: 8 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis type="number" tick={{ fontSize: 11 }} />
-                  <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={80} />
+                  <YAxis
+                    dataKey="name"
+                    type="category"
+                    tick={{ fontSize: isNarrow ? 9 : 11 }}
+                    width={isNarrow ? 64 : 80}
+                  />
                   <Tooltip />
                   <Bar dataKey="registrations" name="Registrations" radius={[0, 4, 4, 0]}>
                     {categoryData.map((_, i) => (
@@ -424,19 +447,22 @@ export default function AdminAnalyticsView() {
             <p className="text-xs text-muted-foreground">Distribution of events by type</p>
           </CardHeader>
           <CardContent>
-            <div className="h-64">
+            <div className="h-64 min-w-0 overflow-hidden">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={categoryData}
                     cx="50%"
                     cy="50%"
-                    outerRadius={90}
+                    outerRadius={isNarrow ? 68 : 90}
                     dataKey="events"
-                    label={({ name, percent }) =>
-                      (percent ?? 0) > 0.05
-                        ? `${name} ${((percent ?? 0) * 100).toFixed(0)}%`
-                        : ""
+                    label={
+                      isNarrow
+                        ? false
+                        : ({ name, percent }) =>
+                            (percent ?? 0) > 0.05
+                              ? `${name} ${((percent ?? 0) * 100).toFixed(0)}%`
+                              : ""
                     }
                   >
                     {categoryData.map((_, i) => (
@@ -444,6 +470,7 @@ export default function AdminAnalyticsView() {
                     ))}
                   </Pie>
                   <Tooltip formatter={(v) => [v, "Events"]} />
+                  {isNarrow && <Legend wrapperStyle={{ fontSize: 11 }} />}
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -466,21 +493,32 @@ export default function AdminAnalyticsView() {
               No registration data available for the selected period.
             </div>
           ) : (
-            <div className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={attendanceData} layout="vertical" margin={{ left: 8 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis type="number" tick={{ fontSize: 11 }} />
-                  <YAxis dataKey="name" type="category" tick={{ fontSize: 10 }} width={180} />
-                  <Tooltip />
-                  <Bar
-                    dataKey="registrations"
-                    name="Registrations"
-                    fill="hsl(var(--primary))"
-                    radius={[0, 4, 4, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="h-72 min-w-0 overflow-x-auto">
+              <div className={isNarrow ? "min-w-[320px] h-72" : "h-72"}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={attendanceData}
+                    layout="vertical"
+                    margin={{ left: 4, right: 8 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis type="number" tick={{ fontSize: 11 }} />
+                    <YAxis
+                      dataKey="name"
+                      type="category"
+                      tick={{ fontSize: isNarrow ? 9 : 10 }}
+                      width={isNarrow ? 90 : 180}
+                    />
+                    <Tooltip />
+                    <Bar
+                      dataKey="registrations"
+                      name="Registrations"
+                      fill="hsl(var(--primary))"
+                      radius={[0, 4, 4, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           )}
         </CardContent>

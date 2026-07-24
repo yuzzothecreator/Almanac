@@ -26,13 +26,13 @@ function CalendarContent({ events }: CalendarViewProps) {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Calendar</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Calendar</h1>
+        <p className="text-muted-foreground mt-1 text-sm sm:text-base">
           Campus events for {format(selectedDate, "MMMM d, yyyy")}
         </p>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2">
           <CalendarGrid
             events={published}

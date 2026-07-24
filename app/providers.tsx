@@ -14,11 +14,12 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         <NotificationsProvider>
           {children}
           <Toaster
-            position="top-right"
+            position="top-center"
             richColors
             closeButton
+            mobileOffset={{ top: 16 }}
             toastOptions={{
-              className: "font-sans",
+              className: "font-sans !max-w-[calc(100vw-1.5rem)] sm:!max-w-md",
             }}
           />
         </NotificationsProvider>

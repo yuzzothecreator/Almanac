@@ -38,12 +38,12 @@ export default function StatsCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1, duration: 0.4 }}
     >
-      <Card className="relative overflow-hidden p-5 hover:shadow-lg transition-shadow duration-300">
-        <div className={`absolute -top-6 -right-6 w-24 h-24 rounded-full bg-gradient-to-br ${c} opacity-50`} />
-        <div className="relative">
-          <div className="flex items-center justify-between mb-3">
-            <div className={`p-2.5 rounded-xl bg-gradient-to-br ${c}`}>
-              <Icon className="w-5 h-5" />
+      <Card className="relative overflow-hidden p-3 sm:p-5 hover:shadow-lg transition-shadow duration-300">
+        <div className={`absolute -top-6 -right-6 w-20 sm:w-24 h-20 sm:h-24 rounded-full bg-gradient-to-br ${c} opacity-50`} />
+        <div className="relative min-w-0">
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
+            <div className={`p-2 sm:p-2.5 rounded-xl bg-gradient-to-br ${c}`}>
+              <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             {trend !== undefined && (
               <span
@@ -54,8 +54,10 @@ export default function StatsCard({
               </span>
             )}
           </div>
-          <p className="text-sm text-muted-foreground mb-1">{title}</p>
-          <p className="text-2xl font-bold text-foreground">{value}</p>
+          <p className="text-xs sm:text-sm text-muted-foreground mb-1 leading-tight break-words">
+            {title}
+          </p>
+          <p className="text-xl sm:text-2xl font-bold text-foreground tabular-nums">{value}</p>
         </div>
       </Card>
     </motion.div>

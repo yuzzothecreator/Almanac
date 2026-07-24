@@ -104,9 +104,9 @@ export default function EventCard({ event, index = 0 }: EventCardProps) {
             />
           </div>
         )}
-        <div className="p-5">
+        <div className="p-4 sm:p-5">
           <div className="flex items-start justify-between gap-2 mb-3">
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-1.5 min-w-0">
               <Badge variant="outline" className={`text-[10px] ${cat.color}`}>
                 {cat.label}
               </Badge>
@@ -116,46 +116,50 @@ export default function EventCard({ event, index = 0 }: EventCardProps) {
                 </Badge>
               )}
             </div>
-            <Badge className={`text-[10px] ${statusConfig[event.status]}`}>{event.status}</Badge>
+            <Badge className={`text-[10px] flex-shrink-0 ${statusConfig[event.status]}`}>
+              {event.status}
+            </Badge>
           </div>
 
-          <h3 className="text-base font-semibold text-foreground mb-2 line-clamp-2 group-hover:text-primary transition-colors">
+          <h3 className="text-base font-semibold text-foreground mb-2 line-clamp-2 group-hover:text-primary transition-colors break-words">
             {event.title}
           </h3>
 
           {event.description && (
-            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{event.description}</p>
+            <p className="text-sm text-muted-foreground mb-3 line-clamp-2 break-words">
+              {event.description}
+            </p>
           )}
 
           <div className="space-y-1.5 mb-4">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Calendar className="w-3.5 h-3.5" />
-              <span>{format(new Date(event.date), "EEE, MMM d, yyyy")}</span>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
+              <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
+              <span className="truncate">{format(new Date(event.date), "EEE, MMM d, yyyy")}</span>
             </div>
             {event.start_time && (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Clock className="w-3.5 h-3.5" />
-                <span>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
+                <Clock className="w-3.5 h-3.5 flex-shrink-0" />
+                <span className="truncate">
                   {event.start_time}
                   {event.end_time ? ` - ${event.end_time}` : ""}
                 </span>
               </div>
             )}
             {event.venue && (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <MapPin className="w-3.5 h-3.5" />
-                <span>{event.venue}</span>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
+                <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                <span className="truncate">{event.venue}</span>
               </div>
             )}
             {event.organizer && (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <User className="w-3.5 h-3.5" />
-                <span>{event.organizer}</span>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
+                <User className="w-3.5 h-3.5 flex-shrink-0" />
+                <span className="truncate">{event.organizer}</span>
               </div>
             )}
           </div>
 
-          <div className="flex items-center justify-between pt-3 border-t border-border/50">
+          <div className="flex items-center justify-between gap-2 pt-3 border-t border-border/50">
             {isUpcoming && event.status === "published" ? (
               <Countdown targetDate={eventDateTime} />
             ) : (
@@ -167,7 +171,12 @@ export default function EventCard({ event, index = 0 }: EventCardProps) {
                     : ""}
               </span>
             )}
-            <Button asChild variant="ghost" size="sm" className="text-xs gap-1 hover:text-primary">
+            <Button
+              asChild
+              variant="ghost"
+              size="sm"
+              className="text-xs gap-1 hover:text-primary min-h-9 flex-shrink-0"
+            >
               <Link href={`/events/${event.id}`}>
                 Details <ArrowRight className="w-3 h-3" />
               </Link>

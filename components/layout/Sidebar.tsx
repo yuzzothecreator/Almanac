@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { useNotifications } from "@/components/notifications/NotificationsProvider";
+import { useSidebarLayout } from "@/components/layout/SidebarLayoutContext";
 
 const studentNav = [
   { path: "/", icon: LayoutDashboard, label: "Dashboard" },
@@ -46,7 +47,7 @@ const adminNav = [
 ];
 
 export default function Sidebar() {
-  const [collapsed, setCollapsed] = useState(false);
+  const { collapsed, setCollapsed } = useSidebarLayout();
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
   const { user, logout } = useAuth();
@@ -147,7 +148,7 @@ export default function Sidebar() {
       <button
         type="button"
         onClick={() => setMobileOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-xl bg-card shadow-lg border relative"
+        className="lg:hidden fixed z-50 p-2.5 min-h-11 min-w-11 rounded-xl bg-card shadow-lg border relative top-[max(1rem,env(safe-area-inset-top))] left-[max(1rem,env(safe-area-inset-left))]"
         aria-label="Open menu"
       >
         <Menu className="w-5 h-5" />
@@ -178,7 +179,7 @@ export default function Sidebar() {
               <button
                 type="button"
                 onClick={() => setMobileOpen(false)}
-                className="absolute top-4 right-4 p-1 rounded-lg hover:bg-sidebar-accent"
+                className="absolute top-4 right-4 p-2.5 min-h-11 min-w-11 rounded-lg hover:bg-sidebar-accent flex items-center justify-center"
                 aria-label="Close menu"
               >
                 <X className="w-4 h-4 text-sidebar-foreground" />
@@ -197,8 +198,8 @@ export default function Sidebar() {
         <SidebarContent />
         <button
           type="button"
-          onClick={() => setCollapsed(!collapsed)}
-          className="absolute -right-3 top-20 w-6 h-6 rounded-full bg-card border shadow-sm flex items-center justify-center hover:bg-accent transition-colors"
+          onClick={() => setCollapsed((prev) => !prev)}
+          className="absolute -right-3 top-20 w-8 h-8 rounded-full bg-card border shadow-sm flex items-center justify-center hover:bg-accent transition-colors"
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {collapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}

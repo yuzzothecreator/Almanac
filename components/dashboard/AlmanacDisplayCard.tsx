@@ -32,18 +32,21 @@ export default function AlmanacDisplayCard({ almanac }: AlmanacDisplayCardProps)
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/20 text-primary text-xs font-semibold mb-4 uppercase tracking-widest">
               <CalendarDays className="w-3.5 h-3.5" /> Official Calendar
             </div>
-            <h3 className="text-xl sm:text-2xl font-bold mb-2 text-foreground">
+            <h3 className="text-xl sm:text-2xl font-bold mb-2 text-foreground break-words">
               {almanac.title}
             </h3>
-            <p className="text-muted-foreground mb-6 max-w-md">
+            <p className="text-muted-foreground mb-6 max-w-md break-words">
               {almanac.description ||
                 `The complete academic calendar for the ${almanac.year} year.`}
             </p>
-            <div className="flex flex-wrap items-center gap-3">
-              <Button className="gap-2 shadow-md">
+            <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
+              <Button className="gap-2 shadow-md w-full sm:w-auto">
                 <Eye className="w-4 h-4" /> View Almanac
               </Button>
-              <Button variant="outline" className="gap-2 bg-background/50 backdrop-blur-sm">
+              <Button
+                variant="outline"
+                className="gap-2 bg-background/50 backdrop-blur-sm w-full sm:w-auto"
+              >
                 <Download className="w-4 h-4" /> Download PDF
               </Button>
             </div>

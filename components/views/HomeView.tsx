@@ -58,27 +58,27 @@ export default function HomeView({
           <p className="text-sm text-muted-foreground mb-1">
             {format(new Date(), "EEEE, MMMM d, yyyy")}
           </p>
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground break-words">
             Welcome back, <span className="text-gradient">{firstName}</span>
           </h1>
           <p className="text-muted-foreground mt-1">
             {upcomingEvents.length} upcoming events on your campus
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button asChild variant="outline" className="gap-2">
+        <div className="flex flex-col sm:flex-row flex-wrap gap-2 w-full sm:w-auto">
+          <Button asChild variant="outline" className="gap-2 w-full sm:w-auto">
             <Link href="/calendar">
               <Calendar className="w-4 h-4" /> Calendar
             </Link>
           </Button>
           {canManage ? (
-            <Button asChild className="gap-2">
+            <Button asChild className="gap-2 w-full sm:w-auto">
               <Link href="/admin">
                 <BookOpen className="w-4 h-4" /> Manage Events
               </Link>
             </Button>
           ) : (
-            <Button asChild className="gap-2">
+            <Button asChild className="gap-2 w-full sm:w-auto">
               <Link href="/events">
                 <BookOpen className="w-4 h-4" /> Browse Events
               </Link>

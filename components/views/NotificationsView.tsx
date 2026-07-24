@@ -38,9 +38,9 @@ export default function NotificationsView() {
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between gap-3"
+        className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
       >
-        <div>
+        <div className="min-w-0">
           <h1 className="text-2xl md:text-3xl font-bold mb-1">Notifications</h1>
           <p className="text-sm text-muted-foreground">
             {loading
@@ -55,7 +55,7 @@ export default function NotificationsView() {
             variant="outline"
             size="sm"
             onClick={() => void markAllRead()}
-            className="gap-1.5"
+            className="gap-1.5 min-h-9 w-full sm:w-auto self-start sm:self-auto"
           >
             <CheckCheck className="w-3.5 h-3.5" /> Mark all read
           </Button>

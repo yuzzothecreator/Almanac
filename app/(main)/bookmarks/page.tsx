@@ -41,8 +41,8 @@ export default function BookmarksPage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Bookmarks</h1>
-        <p className="text-muted-foreground mt-1">Events you saved for later</p>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Bookmarks</h1>
+        <p className="text-muted-foreground mt-1 text-sm sm:text-base">Events you saved for later</p>
       </div>
 
       {loading || isLoadingAuth ? (
