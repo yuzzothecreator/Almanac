@@ -14,7 +14,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
           collapsed ? "lg:ml-[72px]" : "lg:ml-[240px]"
         }`}
       >
-        <div className="p-4 sm:p-5 md:p-6 lg:p-8 pt-16 lg:pt-8 max-w-[100vw]">
+        <div className="p-4 sm:p-5 md:p-6 lg:p-8 pt-[calc(3.5rem+0.75rem+env(safe-area-inset-top))] lg:pt-8 max-w-[100vw]">
           {children}
         </div>
       </main>
