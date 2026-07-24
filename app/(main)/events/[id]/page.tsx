@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
@@ -19,6 +20,44 @@ export const dynamic = "force-dynamic";
 
 interface EventDetailPageProps {
   params: Promise<{ id: string }>;
+}
+
+export async function generateMetadata({
+  params,
+}: EventDetailPageProps): Promise<Metadata> {
+  const { id } = await params;
+  const event = await getEventById(id);
+  if (!event) {
+    return { title: "Event not found" };
+  }
+
+  const description =
+    event.description?.slice(0, 160) ||
+    `${event.title} on ${format(new Date(event.date), "MMMM d, yyyy")}${
+      event.venue ? ` at ${event.venue}` : ""
+    }.`;
+
+  return {
+    title: event.title,
+    description,
+    openGraph: {
+      title: event.title,
+      description,
+      type: "article",
+      images: event.banner_url
+        ? [{ url: event.banner_url }]
+        : [{ url: "/og.png" }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: event.title,
+      description,
+      images: event.banner_url ? [event.banner_url] : ["/og.png"],
+    },
+    alternates: {
+      canonical: `/events/${event.id}`,
+    },
+  };
 }
 
 export default async function EventDetailPage({ params }: EventDetailPageProps) {
